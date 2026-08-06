@@ -1,1 +1,279 @@
 2026-08-06 15:49:36,596 INFO operation=overlord migration_complete from_version=0 to_version=5 applied=[1, 2, 3, 4, 5]
+2026-08-06 16:26:37,657 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:26:48,968 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:27:47,628 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:27:52,176 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:27:52,185 ERROR operation=overlord startup_failed error_id=58c16f3854f8 error_class=AttributeError
+Traceback (most recent call last):
+  File "E:\Projects\Overlord\main.py", line 17, in main
+    OverlordApp(page, result.services).mount()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "E:\Projects\Overlord\overlord\presentation\app.py", line 46, in mount
+    self.render()
+    ~~~~~~~~~~~^^
+  File "E:\Projects\Overlord\overlord\presentation\app.py", line 205, in render
+    self.page.add(ft.Row([self._sidebar(tokens, family), body], spacing=tokens.space_0, expand=True))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\base_page.py", line 316, in add
+    self.update()
+    ~~~~~~~~~~~^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\page.py", line 667, in update
+    self.__update(self)
+    ~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\page.py", line 691, in __update
+    self.session.patch_control(c)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\messaging\session.py", line 233, in patch_control
+    patch, added_controls, removed_controls = self.__get_update_control_patch(
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        control=control,
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        frozen=frozen,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\messaging\session.py", line 519, in __get_update_control_patch
+    patch, added_controls, removed_controls = ObjectPatch.from_diff(
+                                              ~~~~~~~~~~~~~~~~~~~~~^
+        prev_control,
+        ^^^^^^^^^^^^^
+    ...<4 lines>...
+        frozen=frozen,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 277, in from_diff
+    builder._compare_values(parent, path or [], None, src, dst, frozen=frozen)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1215, in _compare_values
+    self._compare_dataclasses(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        parent, _path_join(path, key), src, dst, frozen
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1122, in _compare_dataclasses
+    self._compare_values(dst, path, field_name, old, new, frozen)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1215, in _compare_values
+    self._compare_dataclasses(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        parent, _path_join(path, key), src, dst, frozen
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1117, in _compare_dataclasses
+    new = getattr(dst, field_name)
+AttributeError: 'Theme' object has no attribute 'theme'
+2026-08-06 16:29:31,899 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:29:31,907 ERROR operation=overlord startup_failed error_id=0d51099a67d1 error_class=AttributeError
+Traceback (most recent call last):
+  File "E:\Projects\Overlord\main.py", line 17, in main
+    OverlordApp(page, result.services).mount()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "E:\Projects\Overlord\overlord\presentation\app.py", line 46, in mount
+    self.render()
+    ~~~~~~~~~~~^^
+  File "E:\Projects\Overlord\overlord\presentation\app.py", line 205, in render
+    self.page.add(ft.Row([self._sidebar(tokens, family), body], spacing=tokens.space_0, expand=True))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\base_page.py", line 316, in add
+    self.update()
+    ~~~~~~~~~~~^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\page.py", line 667, in update
+    self.__update(self)
+    ~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\page.py", line 691, in __update
+    self.session.patch_control(c)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\messaging\session.py", line 233, in patch_control
+    patch, added_controls, removed_controls = self.__get_update_control_patch(
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        control=control,
+        ^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        frozen=frozen,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\messaging\session.py", line 519, in __get_update_control_patch
+    patch, added_controls, removed_controls = ObjectPatch.from_diff(
+                                              ~~~~~~~~~~~~~~~~~~~~~^
+        prev_control,
+        ^^^^^^^^^^^^^
+    ...<4 lines>...
+        frozen=frozen,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 277, in from_diff
+    builder._compare_values(parent, path or [], None, src, dst, frozen=frozen)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1215, in _compare_values
+    self._compare_dataclasses(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        parent, _path_join(path, key), src, dst, frozen
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1122, in _compare_dataclasses
+    self._compare_values(dst, path, field_name, old, new, frozen)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1215, in _compare_values
+    self._compare_dataclasses(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        parent, _path_join(path, key), src, dst, frozen
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Den\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\flet\controls\object_patch.py", line 1117, in _compare_dataclasses
+    new = getattr(dst, field_name)
+AttributeError: 'Theme' object has no attribute 'theme'
+2026-08-06 16:32:34,127 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:33:15,826 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:33:36,925 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:34:06,599 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:34:43,902 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:34:51,669 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:34:57,830 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:34:57,934 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:36:56,686 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:36:56,781 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:38:07,919 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:38:08,407 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:39:46,822 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:39:46,901 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:40:29,048 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:40:29,163 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:41:34,177 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:41:34,255 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:42:21,653 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:42:21,754 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:43:09,065 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:43:09,145 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:44:19,644 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:44:19,708 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:45:47,618 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:45:48,097 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:01,617 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:01,698 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:06,540 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:06,648 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:18,424 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:48:18,498 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:50:03,563 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:50:03,637 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:50:36,131 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:50:36,222 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:51:20,090 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:51:20,180 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:52:07,078 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:52:07,153 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:53:27,636 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:53:27,713 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:53:30,364 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:53:30,473 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:56:02,554 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:56:02,629 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:58:27,359 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:58:27,458 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:58:36,655 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 16:58:36,962 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:00:04,332 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:00:04,425 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:24,581 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:24,696 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:30,103 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:30,195 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:37,992 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:01:38,075 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:02:01,593 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:02:01,723 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:04:53,050 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:04:53,158 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:05:53,943 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:05:54,063 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:06:06,352 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:06:06,453 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:09:22,380 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:09:22,491 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:09:54,622 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:09:54,757 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:11:34,762 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:11:34,856 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:12:32,462 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:12:32,555 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:13:50,684 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:13:50,782 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:13:57,955 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:13:58,048 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:15:22,388 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:15:22,464 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:15:25,786 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:15:25,884 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:02,917 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:03,003 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:08,206 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:08,311 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:16,713 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:17,156 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:35,756 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:43,814 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:18:43,903 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:04,630 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:04,737 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:30,666 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:30,753 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:42,943 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:23:43,026 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:25:06,783 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:25:06,866 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:25:16,201 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:25:16,289 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:27:23,384 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:27:23,460 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:31:47,528 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:31:47,584 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:31:47,585 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:31:47,607 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.93 failed=False
+2026-08-06 17:31:47,608 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.93 render_ms=16.71 total_ms=23.24 loading_visible=False failed=False
+2026-08-06 17:31:47,619 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:31:47,631 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:31:47,631 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:31:47,653 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=8.66 failed=False
+2026-08-06 17:31:47,653 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=8.66 render_ms=13.26 total_ms=22.27 loading_visible=False failed=False
+2026-08-06 17:45:02,621 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:45:02,621 INFO operation=overlord.runtime runtime_start mode=production application_type=desktop database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-06 17:45:02,673 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:45:02,673 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:45:02,688 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.42 failed=False
+2026-08-06 17:45:02,688 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.42 render_ms=9.29 total_ms=15.32 loading_visible=False failed=False
+2026-08-06 17:45:02,695 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-06 17:59:03,065 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:59:03,065 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-06 17:59:03,126 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:03,127 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:03,153 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.16 failed=False
+2026-08-06 17:59:03,153 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.16 render_ms=19.15 total_ms=26.60 loading_visible=False failed=False
+2026-08-06 17:59:03,169 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-06 17:59:13,250 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:59:13,250 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-06 17:59:13,315 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:13,315 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:13,347 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.30 failed=False
+2026-08-06 17:59:13,347 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.30 render_ms=24.54 total_ms=33.11 loading_visible=False failed=False
+2026-08-06 17:59:13,357 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-06 17:59:17,043 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:59:22,616 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:59:22,617 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-06 17:59:22,667 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:22,667 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:22,685 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.29 failed=False
+2026-08-06 17:59:22,685 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.29 render_ms=12.58 total_ms=18.16 loading_visible=False failed=False
+2026-08-06 17:59:42,745 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-06 17:59:42,745 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-06 17:59:42,792 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:42,792 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-06 17:59:42,810 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.77 failed=False
+2026-08-06 17:59:42,811 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.77 render_ms=12.51 total_ms=18.58 loading_visible=False failed=False

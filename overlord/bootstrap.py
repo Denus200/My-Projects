@@ -19,6 +19,7 @@ from overlord.application.cycles import (
 )
 from overlord.application import ApplicationServices
 from overlord.application.dashboard import GetDashboardQuery
+from overlord.application.daily_planning import DailyPlanningApplication, GetDailyPlanningQuery, SaveDailyPlan
 from overlord.application.projects import (
     ArchiveProject,
     CreateProject,
@@ -85,7 +86,14 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
         SearchCyclesQuery(uow), GetCycleDetailQuery(uow),
     )
     return BootstrapResult(
-        ApplicationServices(projects, tasks, settings, GetDashboardQuery(uow), cycles),
+        ApplicationServices(
+            projects,
+            tasks,
+            settings,
+            GetDashboardQuery(uow),
+            cycles,
+            DailyPlanningApplication(GetDailyPlanningQuery(uow), SaveDailyPlan(uow)),
+        ),
         migrations,
     )
     CompleteCycle,

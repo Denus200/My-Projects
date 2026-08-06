@@ -8,6 +8,7 @@ from .design_system.icons import IconName
 
 class AppRoute(StrEnum):
     DASHBOARD = "/dashboard"
+    DAILY_PLANNING = "/planning/day"
     TASKS = "/tasks"
     PROJECTS = "/projects"
     CYCLES = "/cycles"
@@ -33,6 +34,8 @@ NAVIGATION = (
 def route_family(route: str) -> AppRoute | None:
     if route == AppRoute.DASHBOARD:
         return AppRoute.DASHBOARD
+    if route == AppRoute.DAILY_PLANNING:
+        return AppRoute.DAILY_PLANNING
     if route == AppRoute.TASKS:
         return AppRoute.TASKS
     if route == AppRoute.PROJECTS or route.startswith("/projects/"):

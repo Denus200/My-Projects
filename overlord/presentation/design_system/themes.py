@@ -21,8 +21,14 @@ def _theme(tokens: ThemeTokens) -> ft.Theme:
     )
 
 
-LIGHT_THEME = _theme(LIGHT_TOKENS)
-DARK_THEME = _theme(DARK_TOKENS)
+def build_light_theme() -> ft.Theme:
+    """Return a session-local theme instance for Flet's mutable patch lifecycle."""
+    return _theme(LIGHT_TOKENS)
+
+
+def build_dark_theme() -> ft.Theme:
+    """Return a session-local theme instance for Flet's mutable patch lifecycle."""
+    return _theme(DARK_TOKENS)
 
 
 def flet_theme_mode(value: str) -> ft.ThemeMode:

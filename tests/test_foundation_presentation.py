@@ -7,9 +7,11 @@ import flet as ft
 
 from overlord.bootstrap import bootstrap
 from overlord.domain.cycles import CycleStatus
+from overlord.presentation.design_system.themes import build_dark_theme, build_light_theme
 from overlord.presentation.design_system.tokens import LIGHT_TOKENS
 from overlord.presentation.design_system.icons import IconName, lucide_icon
 from overlord.presentation.pages.cycles import build_cycles
+from overlord.presentation.pages.daily_planning import build_daily_planning
 from overlord.presentation.pages.dashboard import build_dashboard
 from overlord.presentation.pages.projects import build_projects
 from overlord.presentation.pages.settings import build_settings
@@ -36,7 +38,8 @@ class FoundationPresentationTests(unittest.TestCase):
 
     def test_all_route_pages_construct_with_flet_084(self):
         controls = [
-            build_dashboard(self.services, LIGHT_TOKENS, self.noop, self.noop, self.noop),
+            build_dashboard(self.services, LIGHT_TOKENS, "/dashboard", self.noop, self.noop, self.noop),
+            build_daily_planning(self.services, LIGHT_TOKENS, "/planning/day", self.noop, self.noop),
             build_tasks(self.services, LIGHT_TOKENS, AppSessionState(), self.noop, self.noop),
             build_projects(self.services, LIGHT_TOKENS, "/projects", self.noop, self.noop, self.noop),
             build_projects(self.services, LIGHT_TOKENS, f"/projects/{self.project.id}", self.noop, self.noop, self.noop),
@@ -56,6 +59,17 @@ class FoundationPresentationTests(unittest.TestCase):
             self.assertIn('stroke="currentColor"', asset.read_text(encoding="utf-8"))
             control = lucide_icon(name, color=LIGHT_TOKENS.text_primary, size=LIGHT_TOKENS.icon_medium, label=name.value)
             self.assertEqual(f"icons/lucide/{name.value}.svg", control.src)
+
+    def test_browser_sessions_receive_distinct_theme_instances(self):
+        first_light = build_light_theme()
+        second_light = build_light_theme()
+        first_dark = build_dark_theme()
+        second_dark = build_dark_theme()
+
+        self.assertIsNot(first_light, second_light)
+        self.assertIsNot(first_dark, second_dark)
+        self.assertIsNot(first_light.color_scheme, second_light.color_scheme)
+        self.assertIsNot(first_dark.color_scheme, second_dark.color_scheme)
 
     def test_settings_persist_and_effective_motion_respects_reduction(self):
         updated = self.services.settings.update_settings.execute(

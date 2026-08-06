@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from .cycles import CycleApplication
+from .daily_planning import DailyPlanningApplication
 from .dashboard import GetDashboardQuery
 from .projects import ProjectApplication
 from .settings import SettingsApplication
@@ -16,3 +17,4 @@ class ApplicationServices:
     settings: SettingsApplication
     dashboard: GetDashboardQuery
     cycles: CycleApplication
+    daily_planning: DailyPlanningApplication

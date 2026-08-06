@@ -36,6 +36,7 @@ class CurrentCycleReadModel:
     next_milestone: str | None
     progress: float
     weekly_outcome: str
+    days_remaining: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +50,6 @@ class DashboardReadModel:
     attention: tuple[AttentionItem, ...]
     actual_time_label: str = "Not tracked yet"
     outcome_label: str = "Not set"
-    decorative_label: str = "Your week, in focus"
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +113,7 @@ class GetDashboardQuery:
                     next_milestone,
                     achieved / cycle.length_weeks,
                     outcome_label,
+                    max(0, (cycle.end_date - selected_day).days),
                 )
         return DashboardReadModel(
             selected_day,

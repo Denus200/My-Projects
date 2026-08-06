@@ -17,6 +17,7 @@ __pycache__/
 *.db-wal
 *.db-shm
 data/test-tmp/
+data/demo/
 
 # Flet и артефакты сборки
 .flet/

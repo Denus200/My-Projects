@@ -5,7 +5,7 @@ from datetime import date
 import flet as ft
 
 from overlord.application import ApplicationServices
-from overlord.domain.tasks import BlockerType, TaskLifecycle, TodayGroup
+from overlord.domain.tasks import BlockerType, TaskLifecycle
 from overlord.presentation.components.common import card, empty_state, page_heading, task_row
 from overlord.presentation.design_system.tokens import ThemeTokens
 from overlord.presentation.state import AppSessionState
@@ -28,7 +28,6 @@ def build_task_editor_content(
 ) -> ft.Control:
     data = services.tasks.get_editor.execute(task_id)
     task = data.task
-    current_plan = data.planning_history[-1] if data.planning_history else None
     title = ft.TextField(label="Title", value=task.title)
     description = ft.TextField(label="Description", value=task.description or "", multiline=True, min_lines=2, max_lines=4)
     definition = ft.TextField(label="Definition of Done", value=task.definition_of_done or "", multiline=True, min_lines=2, max_lines=4)
@@ -36,17 +35,6 @@ def build_task_editor_content(
     estimate = ft.TextField(label="Estimate (minutes)", value=str(task.estimate_minutes or ""), keyboard_type=ft.KeyboardType.NUMBER)
     importance = ft.Checkbox(label="Important", value=task.importance is True)
     urgency = ft.Checkbox(label="Urgent", value=task.urgency is True)
-    plan_date = ft.TextField(label="Planned date", value=current_plan.planned_date.isoformat() if current_plan else date.today().isoformat())
-    group = ft.Dropdown(
-        label="Today group",
-        value=current_plan.today_group.value if current_plan and current_plan.today_group else "none",
-        options=[ft.DropdownOption("none", "No Dashboard slot"), ft.DropdownOption("primary", "Primary"), ft.DropdownOption("secondary", "Secondary")],
-    )
-    position = ft.Dropdown(
-        label="Position",
-        value=str(current_plan.position) if current_plan and current_plan.position else "none",
-        options=[ft.DropdownOption("none", "No position"), *[ft.DropdownOption(str(number), str(number)) for number in range(1, 5)]],
-    )
     message = ft.Text("", color=tokens.error.text, size=tokens.text_small)
 
     def save(_event):
@@ -62,9 +50,6 @@ def build_task_editor_content(
                 urgency=urgency.value,
                 estimate_minutes=minutes,
             )
-            chosen_group = None if group.value == "none" else TodayGroup(group.value)
-            chosen_position = None if position.value == "none" else int(position.value)
-            services.tasks.assign_plan.execute(task.id, _date_value(plan_date.value or ""), chosen_group, chosen_position)
             refresh()
         except Exception as error:
             message.value = str(error)
@@ -141,7 +126,6 @@ def build_task_editor_content(
             ft.Text("Reusable content; no permanent dialog/panel/page shell has been selected.", color=tokens.text_muted, size=tokens.text_small),
             title, description, definition, next_action,
             ft.ResponsiveRow([ft.Container(estimate, col={"sm": 12, "md": 4}), ft.Container(importance, col={"sm": 6, "md": 4}), ft.Container(urgency, col={"sm": 6, "md": 4})]),
-            ft.ResponsiveRow([ft.Container(plan_date, col={"sm": 12, "md": 4}), ft.Container(group, col={"sm": 12, "md": 4}), ft.Container(position, col={"sm": 12, "md": 4})]),
             ft.Row([ft.Button("Save changes", bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=save), ft.TextButton("Close editor", on_click=close)]),
             message,
             ft.Text("Lifecycle", color=tokens.text_secondary, weight=ft.FontWeight.W_600),
@@ -191,16 +175,6 @@ def build_tasks(
     planned_date = ft.TextField(label="Planned date", value=date.today().isoformat())
     definition = ft.TextField(label="Definition of Done", multiline=True, min_lines=1, max_lines=3)
     next_action = ft.TextField(label="Next action")
-    group = ft.Dropdown(
-        label="Dashboard slot",
-        value="none",
-        options=[ft.DropdownOption("none", "No slot"), ft.DropdownOption("primary", "Primary"), ft.DropdownOption("secondary", "Secondary")],
-    )
-    position = ft.Dropdown(
-        label="Position",
-        value="none",
-        options=[ft.DropdownOption("none", "No position"), *[ft.DropdownOption(str(number), str(number)) for number in range(1, 5)]],
-    )
     importance = ft.Checkbox(label="Important")
     urgency = ft.Checkbox(label="Urgent")
     create_message = ft.Text("", color=tokens.error.text, size=tokens.text_small)
@@ -209,14 +183,12 @@ def build_tasks(
         try:
             if project.value is None:
                 raise ValueError("Create a Project before creating a Task.")
-            chosen_group = None if group.value == "none" else TodayGroup(group.value)
-            chosen_position = None if position.value == "none" else int(position.value)
             services.tasks.create_task.execute(
                 int(project.value),
                 title.value or "",
                 planned_date=_date_value(planned_date.value or ""),
-                today_group=chosen_group,
-                position=chosen_position,
+                today_group=None,
+                position=None,
                 definition_of_done=definition.value or None,
                 next_action=next_action.value or None,
                 importance=importance.value,
@@ -308,7 +280,7 @@ def build_tasks(
         card("Create Task", [
             ft.Text("Choose an existing Project. Project creation remains a separate workflow.", color=tokens.text_muted, size=tokens.text_small),
             ft.ResponsiveRow([ft.Container(project, col={"sm": 12, "md": 4}), ft.Container(title, col={"sm": 12, "md": 8})]),
-            ft.ResponsiveRow([ft.Container(planned_date, col={"sm": 12, "md": 4}), ft.Container(group, col={"sm": 12, "md": 4}), ft.Container(position, col={"sm": 12, "md": 4})]),
+            ft.Container(planned_date, width=240),
             definition, next_action, ft.Row([importance, urgency]), create_message,
             ft.Button("Create Task", bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=create, disabled=not projects),
         ], tokens),
