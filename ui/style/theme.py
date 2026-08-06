@@ -1,0 +1,14 @@
+class AppStyle:
+    BG_MAIN = "#1E1E2E"
+    BG_SIDEBAR = "#181825"
+    SURFACE = "#313244"
+    PRIMARY = "#89B4FA"
+    SUCCESS = "#A6E3A1"
+    WARNING = "#F9E2AF"
+    DANGER = "#F38BA8"
+    TEXT_MAIN = "#CDD6F4"
+    TEXT_MUTED = "#6C7086"
+
+    TITLE_SIZE = 28
+    TEXT_SIZE = 14
+    RADIUS = 10

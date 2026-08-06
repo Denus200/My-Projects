@@ -1,0 +1,25 @@
+# Пользовательские папки
+docs/
+Ref/
+ref/
+
+# Python: виртуальные окружения и кэш
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite: базы данных и временные журналы
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+data/test-tmp/
+
+# Flet и артефакты сборки
+.flet/
+build/
+dist/
