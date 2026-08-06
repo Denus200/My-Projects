@@ -1,0 +1,11 @@
+{
+  "source_path": "E:\\Projects\\Overlord\\data\\overlord.db",
+  "backup_path": "E:\\Projects\\Overlord\\data\\backups\\overlord-v0-20260806T124935Z.db",
+  "source_sha256": "E8339C04B31A302BCEDE1E0A5C708B5A130FA2E368F3D868BBD4CA95A8EFE527",
+  "backup_sha256": "4CFCFB71F52BF07690CB304D938826E5ED307275FBA4EAF567D1F459BA1C9414",
+  "source_size": 24576,
+  "backup_size": 24576,
+  "from_version": 0,
+  "to_version": 5,
+  "created_at": "2026-08-06T12:49:36.003717+00:00"
+}

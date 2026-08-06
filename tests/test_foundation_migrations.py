@@ -1,0 +1,143 @@
+import sqlite3
+import unittest
+import uuid
+from contextlib import closing
+from unittest.mock import patch
+from pathlib import Path
+
+from overlord.infrastructure.sqlite.connection import ConnectionFactory
+from overlord.infrastructure.sqlite.migrations import (
+    Migration,
+    MigrationError,
+    MigrationChecksumError,
+    MigrationRunner,
+    UnknownLegacySchemaError,
+)
+
+TEST_TEMP_ROOT = Path(__file__).resolve().parents[1] / "data" / "test-tmp"
+TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+
+
+LEGACY_DDL = """
+CREATE TABLE projects (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+ description TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'active',
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE tasks (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, title TEXT NOT NULL,
+ description TEXT NOT NULL DEFAULT '', scheduled_date TEXT NOT NULL, planned_minutes INTEGER,
+ status TEXT NOT NULL DEFAULT 'planned', comment TEXT NOT NULL DEFAULT '',
+ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE RESTRICT
+);
+CREATE INDEX idx_tasks_scheduled_date ON tasks(scheduled_date);
+CREATE INDEX idx_tasks_project_id ON tasks(project_id);
+"""
+
+
+class FoundationMigrationTests(unittest.TestCase):
+    def setUp(self):
+        self.paths: list[Path] = []
+
+    def database_path(self, label: str) -> Path:
+        path = TEST_TEMP_ROOT / f"{label}-{uuid.uuid4().hex}.db"
+        self.paths.append(path)
+        return path
+
+    def tearDown(self):
+        for path in self.paths:
+            path.unlink(missing_ok=True)
+
+    def test_fresh_database_reaches_version_five(self):
+        path = self.database_path("fresh")
+        result = MigrationRunner(ConnectionFactory(path)).migrate()
+        self.assertEqual((1, 2, 3, 4, 5), result.applied)
+        self.assertIsNone(result.backup)
+        with closing(sqlite3.connect(path)) as connection:
+            self.assertEqual(5, connection.execute("PRAGMA user_version").fetchone()[0])
+            self.assertEqual("ok", connection.execute("PRAGMA integrity_check").fetchone()[0])
+            self.assertEqual([], connection.execute("PRAGMA foreign_key_check").fetchall())
+            self.assertEqual(1, connection.execute("SELECT COUNT(*) FROM settings").fetchone()[0])
+
+    def test_exact_legacy_database_is_backed_up_and_preserved(self):
+        path = self.database_path("legacy")
+        connection = sqlite3.connect(path)
+        connection.executescript(LEGACY_DDL)
+        project_id = connection.execute("INSERT INTO projects(title) VALUES ('Keep me')").lastrowid
+        task_id = connection.execute(
+            "INSERT INTO tasks(project_id,title,scheduled_date,status) VALUES (?,?,?,?)",
+            (project_id, "Keep task", "2026-08-06", "planned"),
+        ).lastrowid
+        connection.commit()
+        connection.close()
+        result = MigrationRunner(ConnectionFactory(path)).migrate()
+        self.assertIsNotNone(result.backup)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        self.assertTrue(result.backup.database_path.exists())
+        self.assertTrue(result.backup.manifest_path.exists())
+        with closing(sqlite3.connect(path)) as migrated:
+            self.assertEqual((project_id, "Keep me"), migrated.execute("SELECT id,title FROM projects").fetchone())
+            self.assertEqual((task_id, "Keep task", "planned"), migrated.execute(
+                "SELECT id,title,lifecycle_status FROM tasks"
+            ).fetchone())
+            self.assertEqual(("primary", 1), migrated.execute(
+                "SELECT today_group,position FROM task_plans WHERE task_id=?", (task_id,)
+            ).fetchone())
+
+    def test_already_current_database_is_idempotent(self):
+        path = self.database_path("current")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate()
+        second = runner.migrate()
+        self.assertEqual((), second.applied)
+        self.assertIsNone(second.backup)
+
+    def test_unknown_version_zero_shape_is_refused(self):
+        path = self.database_path("unknown")
+        with closing(sqlite3.connect(path)) as connection:
+            connection.execute("CREATE TABLE surprising(id INTEGER PRIMARY KEY)")
+            connection.commit()
+        with self.assertRaises(UnknownLegacySchemaError):
+            MigrationRunner(ConnectionFactory(path)).migrate()
+
+    def test_applied_checksum_drift_is_refused(self):
+        path = self.database_path("tampered")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate()
+        with closing(sqlite3.connect(path)) as connection:
+            connection.execute("UPDATE schema_migrations SET checksum='tampered' WHERE version=3")
+            connection.commit()
+        with self.assertRaises(MigrationChecksumError):
+            runner.migrate()
+
+    def test_failed_migration_rolls_back_active_version(self):
+        path = self.database_path("rollback")
+
+        def fail_after_write(connection):
+            connection.execute("CREATE TABLE should_rollback(id INTEGER PRIMARY KEY)")
+            raise RuntimeError("simulated migration failure")
+
+        bad = Migration(1, "simulated_failure", "failure-test-v1", fail_after_write)
+        with patch("overlord.infrastructure.sqlite.migrations.MIGRATIONS", (bad,)):
+            with self.assertRaises(MigrationError):
+                MigrationRunner(ConnectionFactory(path)).migrate()
+        with closing(sqlite3.connect(path)) as connection:
+            self.assertEqual(0, connection.execute("PRAGMA user_version").fetchone()[0])
+            self.assertIsNone(connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='should_rollback'"
+            ).fetchone())
+
+    def test_previous_version_advances_without_reapplying_history(self):
+        path = self.database_path("previous")
+        runner = MigrationRunner(ConnectionFactory(path))
+        first = runner.migrate(target_version=4)
+        self.assertEqual(4, first.to_version)
+        final = runner.migrate()
+        self.assertEqual((5,), final.applied)
+        self.assertIsNotNone(final.backup)
+        self.paths.extend((final.backup.database_path, final.backup.manifest_path))
+
+
+if __name__ == "__main__":
+    unittest.main()

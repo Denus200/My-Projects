@@ -1,6 +1,5 @@
-import os
-import tempfile
 import unittest
+import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -16,8 +15,7 @@ class DailyFocusServiceTests(unittest.TestCase):
     def setUp(self):
         test_tmp_root = Path(__file__).resolve().parents[1] / "data" / "test-tmp"
         test_tmp_root.mkdir(parents=True, exist_ok=True)
-        self.temp_dir = tempfile.TemporaryDirectory(dir=test_tmp_root)
-        self.db_path = os.path.join(self.temp_dir.name, "overlord-test.db")
+        self.db_path = test_tmp_root / f"legacy-service-{uuid.uuid4().hex}.db"
         self.connection = connect_database(self.db_path)
         initialize_database(self.connection)
         self.projects = ProjectService(ProjectRepository(self.connection))
@@ -25,7 +23,7 @@ class DailyFocusServiceTests(unittest.TestCase):
 
     def tearDown(self):
         self.connection.close()
-        self.temp_dir.cleanup()
+        self.db_path.unlink(missing_ok=True)
 
     def test_creates_project_and_task_for_today(self):
         project = self.projects.create_project("Build Overlord", "Daily focus MVP")
