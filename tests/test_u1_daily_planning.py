@@ -44,11 +44,11 @@ def _text_values(control) -> list[str]:
 
 class U1DailyPlanningTests(unittest.TestCase):
     def test_task_creation_does_not_offer_dashboard_group_or_position(self):
-        source = inspect.getsource(tasks_page.build_tasks)
+        source = inspect.getsource(tasks_page.build_quick_task_dialog)
         self.assertNotIn('label="Dashboard slot"', source)
         self.assertNotIn('label="Position"', source)
-        self.assertIn("today_group=None", source)
-        self.assertIn("position=None", source)
+        self.assertNotIn("today_group", source)
+        self.assertNotIn("position", source)
 
     def setUp(self):
         self.path = TEST_TEMP_ROOT / f"u1-{uuid.uuid4().hex}.db"

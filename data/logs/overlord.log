@@ -277,3 +277,549 @@ AttributeError: 'Theme' object has no attribute 'theme'
 2026-08-06 17:59:42,792 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
 2026-08-06 17:59:42,810 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.77 failed=False
 2026-08-06 17:59:42,811 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.77 render_ms=12.51 total_ms=18.58 loading_visible=False failed=False
+2026-08-07 12:52:32,126 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:52:32,150 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:52:32,204 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:32,204 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:32,222 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.44 failed=False
+2026-08-07 12:52:32,222 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.44 render_ms=12.65 total_ms=18.41 loading_visible=False failed=False
+2026-08-07 12:52:32,442 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 12:52:35,113 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:52:35,114 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:52:35,178 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:35,178 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:35,205 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=8.51 failed=False
+2026-08-07 12:52:35,205 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=8.51 render_ms=17.99 total_ms=26.85 loading_visible=False failed=False
+2026-08-07 12:52:36,355 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:52:36,355 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:52:36,366 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:36,366 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:52:36,388 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.43 failed=False
+2026-08-07 12:52:36,389 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.43 render_ms=14.28 total_ms=22.19 loading_visible=False failed=False
+2026-08-07 12:52:36,408 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 12:53:30,804 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:53:30,804 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:53:30,862 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:30,867 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:30,951 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=22.83 failed=False
+2026-08-07 12:53:30,951 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=22.83 render_ms=60.90 total_ms=89.45 loading_visible=False failed=False
+2026-08-07 12:53:32,698 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:53:32,698 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:53:32,726 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:32,726 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:32,748 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=6.35 failed=False
+2026-08-07 12:53:32,748 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=6.35 render_ms=15.24 total_ms=21.93 loading_visible=False failed=False
+2026-08-07 12:53:32,831 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 12:53:35,699 INFO operation=overlord.navigation route_transition_requested requested_route=/ previous_route=/dashboard
+2026-08-07 12:53:35,705 INFO operation=overlord.navigation route_query_start requested_route=/ previous_route=/dashboard
+2026-08-07 12:53:35,711 INFO operation=overlord.navigation route_query_complete requested_route=/ previous_route=/dashboard elapsed_ms=6.41 failed=False
+2026-08-07 12:53:35,714 INFO operation=overlord.navigation route_render_complete requested_route=/ previous_route=/dashboard query_ms=6.41 render_ms=2.64 total_ms=14.75 loading_visible=False failed=False
+2026-08-07 12:53:36,957 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/
+2026-08-07 12:53:36,958 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/
+2026-08-07 12:53:36,964 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/ elapsed_ms=5.42 failed=False
+2026-08-07 12:53:36,975 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/ query_ms=5.42 render_ms=11.05 total_ms=18.22 loading_visible=False failed=False
+2026-08-07 12:53:37,779 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 12:53:37,783 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 12:53:37,788 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=5.35 failed=False
+2026-08-07 12:53:37,804 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=5.35 render_ms=16.09 total_ms=25.12 loading_visible=False failed=False
+2026-08-07 12:53:41,065 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:53:41,066 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:53:41,130 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:41,130 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:53:41,151 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.09 failed=False
+2026-08-07 12:53:41,151 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.09 render_ms=15.80 total_ms=21.27 loading_visible=False failed=False
+2026-08-07 12:53:41,163 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:53:41,163 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:53:41,174 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 12:53:41,174 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 12:53:41,212 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=20.45 failed=False
+2026-08-07 12:53:41,212 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=20.45 render_ms=16.83 total_ms=37.71 loading_visible=False failed=False
+2026-08-07 12:53:42,618 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 12:53:42,625 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 12:53:42,630 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=5.64 failed=False
+2026-08-07 12:53:42,646 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=5.64 render_ms=15.23 total_ms=27.28 loading_visible=False failed=False
+2026-08-07 12:54:58,385 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:54:58,386 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:54:58,465 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:54:58,465 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:54:58,486 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.39 failed=False
+2026-08-07 12:54:58,486 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.39 render_ms=15.91 total_ms=21.60 loading_visible=False failed=False
+2026-08-07 12:56:05,071 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:56:05,071 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:56:05,128 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:56:05,128 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:56:05,151 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.45 failed=False
+2026-08-07 12:56:05,151 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.45 render_ms=17.21 total_ms=22.99 loading_visible=False failed=False
+2026-08-07 12:57:30,505 INFO operation=overlord migration_complete from_version=5 to_version=5 applied=[]
+2026-08-07 12:57:30,505 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 12:57:30,583 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:57:30,584 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 12:57:30,606 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=6.90 failed=False
+2026-08-07 12:57:30,606 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=6.90 render_ms=14.99 total_ms=22.23 loading_visible=False failed=False
+2026-08-07 13:14:28,524 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:14:28,525 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:14:28,586 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:14:28,586 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:14:28,606 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.77 failed=False
+2026-08-07 13:14:28,606 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.77 render_ms=12.41 total_ms=20.47 loading_visible=False failed=False
+2026-08-07 13:14:56,574 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:14:56,574 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:14:56,630 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:14:56,630 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:14:56,651 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.23 failed=False
+2026-08-07 13:14:56,651 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.23 render_ms=15.82 total_ms=21.40 loading_visible=False failed=False
+2026-08-07 13:15:30,468 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:15:30,469 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:15:30,541 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:15:30,541 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:15:30,572 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=10.56 failed=False
+2026-08-07 13:15:30,572 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=10.56 render_ms=20.13 total_ms=31.04 loading_visible=False failed=False
+2026-08-07 13:15:32,112 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:15:32,112 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:15:32,119 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:15:32,119 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:15:32,163 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.44 failed=False
+2026-08-07 13:15:32,163 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.44 render_ms=39.10 total_ms=43.84 loading_visible=False failed=False
+2026-08-07 13:15:32,269 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 13:16:33,010 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:16:33,010 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:16:33,072 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:16:33,072 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:16:33,101 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=13.33 failed=False
+2026-08-07 13:16:33,101 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=13.33 render_ms=14.92 total_ms=28.57 loading_visible=False failed=False
+2026-08-07 13:16:33,109 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:16:33,109 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:16:33,121 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:16:33,121 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:16:33,140 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=6.40 failed=False
+2026-08-07 13:16:33,140 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=6.40 render_ms=12.19 total_ms=18.99 loading_visible=False failed=False
+2026-08-07 13:17:01,680 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:01,681 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:01,743 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:01,743 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:01,770 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=11.90 failed=False
+2026-08-07 13:17:01,771 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=11.90 render_ms=15.30 total_ms=27.47 loading_visible=False failed=False
+2026-08-07 13:17:01,911 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:01,911 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:01,921 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:01,921 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:01,939 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.84 failed=False
+2026-08-07 13:17:01,939 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.84 render_ms=13.25 total_ms=18.46 loading_visible=False failed=False
+2026-08-07 13:17:12,432 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:12,434 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:12,500 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,500 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,524 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.29 failed=False
+2026-08-07 13:17:12,524 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.29 render_ms=15.92 total_ms=25.11 loading_visible=False failed=False
+2026-08-07 13:17:12,535 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:12,535 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:12,545 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,548 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,574 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.14 failed=False
+2026-08-07 13:17:12,575 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.14 render_ms=18.87 total_ms=29.35 loading_visible=False failed=False
+2026-08-07 13:17:12,602 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 13:17:12,959 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:12,959 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:12,972 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,972 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:12,989 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.42 failed=False
+2026-08-07 13:17:12,989 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.42 render_ms=12.51 total_ms=17.18 loading_visible=False failed=False
+2026-08-07 13:17:43,011 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:43,012 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:43,078 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,078 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,109 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=12.45 failed=False
+2026-08-07 13:17:43,109 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=12.45 render_ms=18.38 total_ms=31.18 loading_visible=False failed=False
+2026-08-07 13:17:43,124 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:43,124 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:43,138 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,138 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,158 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.99 failed=False
+2026-08-07 13:17:43,159 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.99 render_ms=14.40 total_ms=20.77 loading_visible=False failed=False
+2026-08-07 13:17:43,172 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:17:43,172 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:17:43,191 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,192 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:17:43,219 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=10.17 failed=False
+2026-08-07 13:17:43,219 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=10.17 render_ms=17.13 total_ms=27.84 loading_visible=False failed=False
+2026-08-07 13:23:45,074 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:23:45,074 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:23:45,156 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:45,157 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:45,201 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=12.49 failed=False
+2026-08-07 13:23:45,202 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=12.49 render_ms=32.19 total_ms=44.98 loading_visible=False failed=False
+2026-08-07 13:23:45,214 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:23:45,214 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:23:45,223 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 13:23:45,224 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 13:23:45,244 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=5.50 failed=False
+2026-08-07 13:23:45,245 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=5.50 render_ms=15.29 total_ms=21.12 loading_visible=False failed=False
+2026-08-07 13:23:45,387 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:23:45,387 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:23:45,400 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:45,400 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:45,421 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=6.69 failed=False
+2026-08-07 13:23:45,421 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=6.69 render_ms=13.98 total_ms=21.09 loading_visible=False failed=False
+2026-08-07 13:23:58,583 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:23:58,584 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:23:58,596 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 13:23:58,596 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 13:23:58,615 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=5.30 failed=False
+2026-08-07 13:23:58,615 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=5.30 render_ms=13.79 total_ms=19.52 loading_visible=False failed=False
+2026-08-07 13:23:59,280 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:23:59,280 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:23:59,288 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:59,288 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:23:59,305 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.52 failed=False
+2026-08-07 13:23:59,305 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.52 render_ms=11.36 total_ms=17.26 loading_visible=False failed=False
+2026-08-07 13:26:01,034 INFO operation=overlord.navigation route_transition_requested requested_route=/ previous_route=/tasks
+2026-08-07 13:26:01,038 INFO operation=overlord.navigation route_query_start requested_route=/ previous_route=/tasks
+2026-08-07 13:26:01,043 INFO operation=overlord.navigation route_query_complete requested_route=/ previous_route=/tasks elapsed_ms=5.49 failed=False
+2026-08-07 13:26:01,046 INFO operation=overlord.navigation route_render_complete requested_route=/ previous_route=/tasks query_ms=5.49 render_ms=3.07 total_ms=12.78 loading_visible=False failed=False
+2026-08-07 13:30:15,800 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:30:15,801 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:30:15,877 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 13:30:15,877 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 13:30:15,908 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=6.34 failed=False
+2026-08-07 13:30:15,908 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=6.34 render_ms=24.22 total_ms=30.98 loading_visible=False failed=False
+2026-08-07 13:30:15,924 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:30:15,924 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:30:15,933 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:15,933 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:15,953 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.49 failed=False
+2026-08-07 13:30:15,953 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.49 render_ms=12.27 total_ms=20.14 loading_visible=False failed=False
+2026-08-07 13:30:16,017 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:30:16,017 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:30:16,028 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,028 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,046 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.11 failed=False
+2026-08-07 13:30:16,046 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.11 render_ms=12.23 total_ms=17.81 loading_visible=False failed=False
+2026-08-07 13:30:16,056 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:30:16,057 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:30:16,093 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,093 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,117 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.93 failed=False
+2026-08-07 13:30:16,117 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.93 render_ms=18.35 total_ms=23.60 loading_visible=False failed=False
+2026-08-07 13:30:16,126 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:30:16,126 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:30:16,133 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,133 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:30:16,156 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=8.53 failed=False
+2026-08-07 13:30:16,156 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=8.53 render_ms=14.56 total_ms=23.34 loading_visible=False failed=False
+2026-08-07 13:31:04,030 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:31:04,031 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:31:04,092 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 13:31:04,092 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 13:31:04,113 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=5.81 failed=False
+2026-08-07 13:31:04,114 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=5.81 render_ms=15.66 total_ms=21.77 loading_visible=False failed=False
+2026-08-07 13:31:04,137 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:31:04,137 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:31:04,145 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:04,146 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:04,164 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.62 failed=False
+2026-08-07 13:31:04,164 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.62 render_ms=12.44 total_ms=18.37 loading_visible=False failed=False
+2026-08-07 13:31:04,464 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:31:04,464 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:31:04,475 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:04,476 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:04,493 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.44 failed=False
+2026-08-07 13:31:04,493 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.44 render_ms=12.90 total_ms=17.64 loading_visible=False failed=False
+2026-08-07 13:31:05,115 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:31:05,115 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:31:05,141 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:05,148 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:05,169 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.02 failed=False
+2026-08-07 13:31:05,170 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.02 render_ms=16.35 total_ms=28.20 loading_visible=False failed=False
+2026-08-07 13:31:05,196 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:31:05,196 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:31:05,204 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:05,205 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:31:05,220 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.80 failed=False
+2026-08-07 13:31:05,221 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.80 render_ms=10.63 total_ms=15.94 loading_visible=False failed=False
+2026-08-07 13:32:16,000 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:32:16,000 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:32:16,058 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,058 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,079 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=7.66 failed=False
+2026-08-07 13:32:16,079 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=7.66 render_ms=12.92 total_ms=20.98 loading_visible=False failed=False
+2026-08-07 13:32:16,092 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:32:16,093 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:32:16,101 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,102 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,120 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.87 failed=False
+2026-08-07 13:32:16,120 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.87 render_ms=12.39 total_ms=18.62 loading_visible=False failed=False
+2026-08-07 13:32:16,131 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:32:16,132 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:32:16,142 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,142 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,160 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.65 failed=False
+2026-08-07 13:32:16,160 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.65 render_ms=12.25 total_ms=18.33 loading_visible=False failed=False
+2026-08-07 13:32:16,181 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:32:16,181 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:32:16,207 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,208 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:32:16,224 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.35 failed=False
+2026-08-07 13:32:16,225 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.35 render_ms=11.36 total_ms=17.12 loading_visible=False failed=False
+2026-08-07 13:32:16,233 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:32:16,233 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:32:16,240 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 13:32:16,240 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 13:32:16,254 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=3.97 failed=False
+2026-08-07 13:32:16,254 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=3.97 render_ms=9.79 total_ms=14.05 loading_visible=False failed=False
+2026-08-07 13:42:11,110 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 13:42:11,110 INFO operation=overlord.runtime runtime_start mode=production application_type=desktop database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 13:42:11,162 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:42:11,162 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 13:42:11,177 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.00 failed=False
+2026-08-07 13:42:11,177 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.00 render_ms=10.48 total_ms=15.79 loading_visible=False failed=False
+2026-08-07 13:42:11,187 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 13:42:11,976 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 13:42:11,980 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 13:42:11,985 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=5.39 failed=False
+2026-08-07 13:42:11,997 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=5.39 render_ms=11.45 total_ms=21.02 loading_visible=False failed=False
+2026-08-07 14:05:27,569 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 14:05:27,570 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 14:05:27,646 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:05:27,646 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:05:27,692 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=18.70 failed=False
+2026-08-07 14:05:27,692 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=18.70 render_ms=27.67 total_ms=46.75 loading_visible=False failed=False
+2026-08-07 14:05:27,706 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 14:05:28,911 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:05:28,914 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:05:28,953 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=39.25 failed=False
+2026-08-07 14:05:28,989 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=39.25 render_ms=35.32 total_ms=78.47 loading_visible=False failed=False
+2026-08-07 14:05:44,502 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 14:05:44,503 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 14:05:44,559 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=<startup>
+2026-08-07 14:05:44,560 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=<startup>
+2026-08-07 14:05:44,577 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=<startup> elapsed_ms=4.57 failed=False
+2026-08-07 14:05:44,577 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=<startup> query_ms=4.57 render_ms=12.98 total_ms=17.94 loading_visible=False failed=False
+2026-08-07 14:05:46,672 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:05:46,675 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:05:46,704 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=28.75 failed=False
+2026-08-07 14:05:46,719 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=28.75 render_ms=14.98 total_ms=47.15 loading_visible=False failed=False
+2026-08-07 14:05:47,212 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/dashboard
+2026-08-07 14:05:47,216 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/dashboard
+2026-08-07 14:05:47,220 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/dashboard elapsed_ms=3.82 failed=False
+2026-08-07 14:05:47,226 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/dashboard query_ms=3.82 render_ms=6.04 total_ms=13.44 loading_visible=False failed=False
+2026-08-07 14:05:50,391 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/projects
+2026-08-07 14:05:50,393 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/projects
+2026-08-07 14:05:50,400 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/projects elapsed_ms=7.19 failed=False
+2026-08-07 14:05:50,411 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/projects query_ms=7.19 render_ms=10.03 total_ms=19.66 loading_visible=False failed=False
+2026-08-07 14:06:10,629 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/tasks
+2026-08-07 14:06:10,632 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/tasks
+2026-08-07 14:06:10,639 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/tasks elapsed_ms=6.92 failed=False
+2026-08-07 14:06:10,646 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/tasks query_ms=6.92 render_ms=6.72 total_ms=16.97 loading_visible=False failed=False
+2026-08-07 14:06:11,821 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/projects
+2026-08-07 14:06:11,823 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/projects
+2026-08-07 14:06:11,827 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/projects elapsed_ms=4.23 failed=False
+2026-08-07 14:06:11,837 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/projects query_ms=4.23 render_ms=9.50 total_ms=16.19 loading_visible=False failed=False
+2026-08-07 14:07:33,615 INFO operation=overlord.navigation route_transition_requested requested_route=/settings previous_route=/tasks
+2026-08-07 14:07:33,618 INFO operation=overlord.navigation route_query_start requested_route=/settings previous_route=/tasks
+2026-08-07 14:07:33,624 INFO operation=overlord.navigation route_query_complete requested_route=/settings previous_route=/tasks elapsed_ms=5.73 failed=False
+2026-08-07 14:07:33,633 INFO operation=overlord.navigation route_render_complete requested_route=/settings previous_route=/tasks query_ms=5.73 render_ms=8.35 total_ms=17.80 loading_visible=False failed=False
+2026-08-07 14:07:36,015 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/settings
+2026-08-07 14:07:36,017 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/settings
+2026-08-07 14:07:36,024 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/settings elapsed_ms=6.25 failed=False
+2026-08-07 14:07:36,040 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/settings query_ms=6.25 render_ms=15.99 total_ms=24.88 loading_visible=False failed=False
+2026-08-07 14:08:06,327 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:08:06,331 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:08:06,336 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=4.99 failed=False
+2026-08-07 14:08:06,350 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=4.99 render_ms=13.85 total_ms=22.85 loading_visible=False failed=False
+2026-08-07 14:08:07,278 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:08:07,281 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:08:07,286 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=4.67 failed=False
+2026-08-07 14:08:07,300 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=4.67 render_ms=14.11 total_ms=22.18 loading_visible=False failed=False
+2026-08-07 14:08:17,580 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 14:08:17,580 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 14:08:17,588 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:08:17,588 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:08:17,609 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=5.89 failed=False
+2026-08-07 14:08:17,609 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=5.89 render_ms=14.91 total_ms=21.25 loading_visible=False failed=False
+2026-08-07 14:08:20,146 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:08:20,150 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:08:20,156 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=5.69 failed=False
+2026-08-07 14:08:20,169 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=5.69 render_ms=12.84 total_ms=22.27 loading_visible=False failed=False
+2026-08-07 14:08:20,904 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/tasks
+2026-08-07 14:08:20,910 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/tasks
+2026-08-07 14:08:20,914 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/tasks elapsed_ms=3.82 failed=False
+2026-08-07 14:08:20,921 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/tasks query_ms=3.82 render_ms=7.39 total_ms=17.25 loading_visible=False failed=False
+2026-08-07 14:08:21,617 INFO operation=overlord.navigation route_transition_requested requested_route=/cycles previous_route=/projects
+2026-08-07 14:08:21,619 INFO operation=overlord.navigation route_query_start requested_route=/cycles previous_route=/projects
+2026-08-07 14:08:21,624 INFO operation=overlord.navigation route_query_complete requested_route=/cycles previous_route=/projects elapsed_ms=4.35 failed=False
+2026-08-07 14:08:21,629 INFO operation=overlord.navigation route_render_complete requested_route=/cycles previous_route=/projects query_ms=4.35 render_ms=5.54 total_ms=12.27 loading_visible=False failed=False
+2026-08-07 14:08:22,509 INFO operation=overlord.navigation route_transition_requested requested_route=/settings previous_route=/cycles
+2026-08-07 14:08:22,511 INFO operation=overlord.navigation route_query_start requested_route=/settings previous_route=/cycles
+2026-08-07 14:08:22,514 INFO operation=overlord.navigation route_query_complete requested_route=/settings previous_route=/cycles elapsed_ms=2.82 failed=False
+2026-08-07 14:08:22,522 INFO operation=overlord.navigation route_render_complete requested_route=/settings previous_route=/cycles query_ms=2.82 render_ms=7.39 total_ms=12.61 loading_visible=False failed=False
+2026-08-07 14:08:22,964 INFO operation=overlord.navigation route_transition_requested requested_route=/cycles previous_route=/settings
+2026-08-07 14:08:22,966 INFO operation=overlord.navigation route_query_start requested_route=/cycles previous_route=/settings
+2026-08-07 14:08:22,969 INFO operation=overlord.navigation route_query_complete requested_route=/cycles previous_route=/settings elapsed_ms=2.97 failed=False
+2026-08-07 14:08:22,976 INFO operation=overlord.navigation route_render_complete requested_route=/cycles previous_route=/settings query_ms=2.97 render_ms=6.92 total_ms=12.31 loading_visible=False failed=False
+2026-08-07 14:08:23,409 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/cycles
+2026-08-07 14:08:23,412 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/cycles
+2026-08-07 14:08:23,418 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/cycles elapsed_ms=5.15 failed=False
+2026-08-07 14:08:23,429 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/cycles query_ms=5.15 render_ms=11.16 total_ms=19.67 loading_visible=False failed=False
+2026-08-07 14:08:23,812 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:08:23,816 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:08:23,824 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=7.73 failed=False
+2026-08-07 14:08:23,838 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=7.73 render_ms=14.16 total_ms=26.14 loading_visible=False failed=False
+2026-08-07 14:08:38,167 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:08:38,172 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:08:38,179 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard elapsed_ms=7.32 failed=False
+2026-08-07 14:08:38,194 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard query_ms=7.32 render_ms=15.18 total_ms=27.26 loading_visible=False failed=False
+2026-08-07 14:08:40,836 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:40,840 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:40,845 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 elapsed_ms=5.43 failed=False
+2026-08-07 14:08:40,861 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 query_ms=5.43 render_ms=15.36 total_ms=25.03 loading_visible=False failed=False
+2026-08-07 14:08:42,898 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:08:42,901 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:08:42,905 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard elapsed_ms=4.34 failed=False
+2026-08-07 14:08:42,918 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard query_ms=4.34 render_ms=12.74 total_ms=20.54 loading_visible=False failed=False
+2026-08-07 14:08:44,713 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:44,716 INFO operation=overlord.navigation route_query_start requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:44,722 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07 elapsed_ms=5.49 failed=False
+2026-08-07 14:08:44,737 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07 query_ms=5.49 render_ms=14.71 total_ms=24.03 loading_visible=False failed=False
+2026-08-07 14:08:45,648 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07
+2026-08-07 14:08:45,652 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07
+2026-08-07 14:08:45,657 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07 elapsed_ms=5.65 failed=False
+2026-08-07 14:08:45,670 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07 query_ms=5.65 render_ms=12.62 total_ms=21.81 loading_visible=False failed=False
+2026-08-07 14:08:47,964 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:47,967 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:08:47,973 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 elapsed_ms=6.38 failed=False
+2026-08-07 14:08:47,990 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 query_ms=6.38 render_ms=16.86 total_ms=26.78 loading_visible=False failed=False
+2026-08-07 14:12:45,890 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:12:45,894 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:12:45,905 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=10.46 failed=False
+2026-08-07 14:12:45,921 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=10.46 render_ms=16.10 total_ms=30.71 loading_visible=False failed=False
+2026-08-07 14:13:39,970 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:13:39,974 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:13:39,980 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=5.23 failed=False
+2026-08-07 14:13:39,994 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=5.23 render_ms=14.34 total_ms=23.68 loading_visible=False failed=False
+2026-08-07 14:13:42,382 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:13:42,386 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:13:42,391 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard elapsed_ms=5.15 failed=False
+2026-08-07 14:13:42,409 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard query_ms=5.15 render_ms=18.13 total_ms=27.29 loading_visible=False failed=False
+2026-08-07 14:13:46,538 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:46,542 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:46,549 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/planning/day?date=2026-08-07 elapsed_ms=6.63 failed=False
+2026-08-07 14:13:46,563 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/planning/day?date=2026-08-07 query_ms=6.63 render_ms=13.70 total_ms=24.93 loading_visible=False failed=False
+2026-08-07 14:13:46,997 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:13:47,001 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 14:13:47,006 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=5.24 failed=False
+2026-08-07 14:13:47,023 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=5.24 render_ms=16.52 total_ms=26.05 loading_visible=False failed=False
+2026-08-07 14:13:48,068 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:13:48,072 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard
+2026-08-07 14:13:48,076 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard elapsed_ms=4.86 failed=False
+2026-08-07 14:13:48,090 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard query_ms=4.86 render_ms=13.09 total_ms=21.74 loading_visible=False failed=False
+2026-08-07 14:13:50,769 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:50,773 INFO operation=overlord.navigation route_query_start requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:50,778 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07 elapsed_ms=5.16 failed=False
+2026-08-07 14:13:50,791 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard?date=2026-08-07 previous_route=/planning/day?date=2026-08-07 query_ms=5.16 render_ms=12.55 total_ms=21.84 loading_visible=False failed=False
+2026-08-07 14:13:51,499 INFO operation=overlord.navigation route_transition_requested requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07
+2026-08-07 14:13:51,502 INFO operation=overlord.navigation route_query_start requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07
+2026-08-07 14:13:51,507 INFO operation=overlord.navigation route_query_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07 elapsed_ms=4.55 failed=False
+2026-08-07 14:13:51,523 INFO operation=overlord.navigation route_render_complete requested_route=/planning/day?date=2026-08-07 previous_route=/dashboard?date=2026-08-07 query_ms=4.55 render_ms=15.96 total_ms=24.26 loading_visible=False failed=False
+2026-08-07 14:13:54,702 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:54,706 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/planning/day?date=2026-08-07
+2026-08-07 14:13:54,711 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 elapsed_ms=4.95 failed=False
+2026-08-07 14:13:54,724 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/planning/day?date=2026-08-07 query_ms=4.95 render_ms=12.79 total_ms=21.87 loading_visible=False failed=False
+2026-08-07 14:15:12,662 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:15:12,665 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:15:12,672 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=6.96 failed=False
+2026-08-07 14:15:12,691 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=6.96 render_ms=18.25 total_ms=28.71 loading_visible=False failed=False
+2026-08-07 14:15:13,076 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/tasks
+2026-08-07 14:15:13,079 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/tasks
+2026-08-07 14:15:13,082 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/tasks elapsed_ms=3.17 failed=False
+2026-08-07 14:15:13,090 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/tasks query_ms=3.17 render_ms=7.88 total_ms=14.69 loading_visible=False failed=False
+2026-08-07 14:15:13,371 INFO operation=overlord.navigation route_transition_requested requested_route=/cycles previous_route=/projects
+2026-08-07 14:15:13,374 INFO operation=overlord.navigation route_query_start requested_route=/cycles previous_route=/projects
+2026-08-07 14:15:13,379 INFO operation=overlord.navigation route_query_complete requested_route=/cycles previous_route=/projects elapsed_ms=4.49 failed=False
+2026-08-07 14:15:13,385 INFO operation=overlord.navigation route_render_complete requested_route=/cycles previous_route=/projects query_ms=4.49 render_ms=5.74 total_ms=13.17 loading_visible=False failed=False
+2026-08-07 14:15:13,692 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/cycles
+2026-08-07 14:15:13,695 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/cycles
+2026-08-07 14:15:13,701 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/cycles elapsed_ms=6.04 failed=False
+2026-08-07 14:15:13,715 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/cycles query_ms=6.04 render_ms=14.15 total_ms=23.19 loading_visible=False failed=False
+2026-08-07 14:15:19,527 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:15:19,530 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 14:15:19,540 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=9.26 failed=False
+2026-08-07 14:15:19,558 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=9.26 render_ms=17.87 total_ms=30.86 loading_visible=False failed=False
+2026-08-07 14:15:23,833 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/tasks
+2026-08-07 14:15:23,837 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/tasks
+2026-08-07 14:15:23,841 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/tasks elapsed_ms=3.20 failed=False
+2026-08-07 14:15:23,847 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/tasks query_ms=3.20 render_ms=6.22 total_ms=14.50 loading_visible=False failed=False
+2026-08-07 14:15:25,020 INFO operation=overlord.navigation route_transition_requested requested_route=/cycles previous_route=/projects
+2026-08-07 14:15:25,022 INFO operation=overlord.navigation route_query_start requested_route=/cycles previous_route=/projects
+2026-08-07 14:15:25,026 INFO operation=overlord.navigation route_query_complete requested_route=/cycles previous_route=/projects elapsed_ms=3.22 failed=False
+2026-08-07 14:15:25,031 INFO operation=overlord.navigation route_render_complete requested_route=/cycles previous_route=/projects query_ms=3.22 render_ms=5.64 total_ms=11.41 loading_visible=False failed=False
+2026-08-07 14:15:25,877 INFO operation=overlord.navigation route_transition_requested requested_route=/settings previous_route=/cycles
+2026-08-07 14:15:25,879 INFO operation=overlord.navigation route_query_start requested_route=/settings previous_route=/cycles
+2026-08-07 14:15:25,881 INFO operation=overlord.navigation route_query_complete requested_route=/settings previous_route=/cycles elapsed_ms=2.21 failed=False
+2026-08-07 14:15:25,888 INFO operation=overlord.navigation route_render_complete requested_route=/settings previous_route=/cycles query_ms=2.21 render_ms=7.14 total_ms=11.54 loading_visible=False failed=False
+2026-08-07 14:15:34,312 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/settings
+2026-08-07 14:15:34,314 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/settings
+2026-08-07 14:15:34,326 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/settings elapsed_ms=11.50 failed=False
+2026-08-07 14:15:34,347 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/settings query_ms=11.50 render_ms=20.88 total_ms=35.34 loading_visible=False failed=False
+2026-08-07 14:33:55,486 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 14:33:55,486 INFO operation=overlord.runtime runtime_start mode=production application_type=web database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 14:33:55,495 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:33:55,495 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 14:33:55,516 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=6.84 failed=False
+2026-08-07 14:33:55,516 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=6.84 render_ms=13.78 total_ms=21.07 loading_visible=False failed=False
+2026-08-07 14:33:56,821 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/dashboard
+2026-08-07 14:33:56,825 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/dashboard
+2026-08-07 14:33:56,828 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/dashboard elapsed_ms=3.60 failed=False
+2026-08-07 14:33:56,836 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/dashboard query_ms=3.60 render_ms=7.25 total_ms=14.60 loading_visible=False failed=False
+2026-08-07 14:34:04,163 INFO operation=overlord.navigation route_transition_requested requested_route=/projects/2 previous_route=/projects
+2026-08-07 14:34:04,166 INFO operation=overlord.navigation route_query_start requested_route=/projects/2 previous_route=/projects
+2026-08-07 14:34:04,174 INFO operation=overlord.navigation route_query_complete requested_route=/projects/2 previous_route=/projects elapsed_ms=8.26 failed=False
+2026-08-07 14:34:04,180 INFO operation=overlord.navigation route_render_complete requested_route=/projects/2 previous_route=/projects query_ms=8.26 render_ms=5.63 total_ms=16.30 loading_visible=False failed=False
+2026-08-07 14:34:12,006 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/projects/2
+2026-08-07 14:34:12,008 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/projects/2
+2026-08-07 14:34:12,011 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/projects/2 elapsed_ms=3.01 failed=False
+2026-08-07 14:34:12,019 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/projects/2 query_ms=3.01 render_ms=7.09 total_ms=12.21 loading_visible=False failed=False
+2026-08-07 15:00:40,884 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:00:40,888 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:00:40,899 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=10.72 failed=False
+2026-08-07 15:00:40,920 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=10.72 render_ms=20.53 total_ms=35.26 loading_visible=False failed=False
+2026-08-07 15:00:50,805 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/projects
+2026-08-07 15:00:50,808 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/projects
+2026-08-07 15:00:50,813 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/projects elapsed_ms=5.30 failed=False
+2026-08-07 15:00:50,828 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/projects query_ms=5.30 render_ms=15.26 total_ms=23.24 loading_visible=False failed=False
+2026-08-07 15:01:07,868 INFO operation=overlord.navigation route_transition_ignored requested_route=/tasks previous_route=/tasks reason=duplicate_click
+2026-08-07 15:01:08,317 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 15:01:08,322 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 15:01:08,328 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=6.00 failed=False
+2026-08-07 15:01:08,347 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=6.00 render_ms=19.02 total_ms=29.75 loading_visible=False failed=False
+2026-08-07 15:01:36,256 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:01:36,260 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:01:36,266 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=5.68 failed=False
+2026-08-07 15:01:36,284 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=5.68 render_ms=17.57 total_ms=27.69 loading_visible=False failed=False
+2026-08-07 15:01:38,820 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=/tasks
+2026-08-07 15:01:38,824 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=/tasks
+2026-08-07 15:01:38,829 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=/tasks elapsed_ms=5.48 failed=False
+2026-08-07 15:01:38,844 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=/tasks query_ms=5.48 render_ms=15.13 total_ms=24.51 loading_visible=False failed=False
+2026-08-07 15:01:39,867 INFO operation=overlord.navigation route_transition_requested requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:01:39,871 INFO operation=overlord.navigation route_query_start requested_route=/tasks previous_route=/dashboard
+2026-08-07 15:01:39,878 INFO operation=overlord.navigation route_query_complete requested_route=/tasks previous_route=/dashboard elapsed_ms=6.39 failed=False
+2026-08-07 15:01:39,898 INFO operation=overlord.navigation route_render_complete requested_route=/tasks previous_route=/dashboard query_ms=6.39 render_ms=19.57 total_ms=30.45 loading_visible=False failed=False
+2026-08-07 15:01:40,123 INFO operation=overlord.navigation route_transition_ignored requested_route=/tasks previous_route=/tasks reason=duplicate_click
+2026-08-07 15:03:11,805 INFO operation=overlord.navigation route_transition_requested requested_route=/projects previous_route=/tasks
+2026-08-07 15:03:11,809 INFO operation=overlord.navigation route_query_start requested_route=/projects previous_route=/tasks
+2026-08-07 15:03:11,813 INFO operation=overlord.navigation route_query_complete requested_route=/projects previous_route=/tasks elapsed_ms=3.94 failed=False
+2026-08-07 15:03:11,822 INFO operation=overlord.navigation route_render_complete requested_route=/projects previous_route=/tasks query_ms=3.94 render_ms=8.80 total_ms=17.00 loading_visible=False failed=False
+2026-08-07 15:16:26,825 INFO operation=overlord.navigation route_transition_requested requested_route=/cycles previous_route=/projects
+2026-08-07 15:16:26,829 INFO operation=overlord.navigation route_query_start requested_route=/cycles previous_route=/projects
+2026-08-07 15:16:26,850 INFO operation=overlord.navigation route_query_complete requested_route=/cycles previous_route=/projects elapsed_ms=21.41 failed=False
+2026-08-07 15:16:26,859 INFO operation=overlord.navigation route_render_complete requested_route=/cycles previous_route=/projects query_ms=21.41 render_ms=8.23 total_ms=33.59 loading_visible=False failed=False
+2026-08-07 16:12:33,338 INFO operation=overlord migration_complete from_version=6 to_version=6 applied=[]
+2026-08-07 16:12:33,339 INFO operation=overlord.runtime runtime_start mode=production application_type=desktop database=E:\Projects\Overlord\data\overlord.db demo_seed=not_applicable seed_completed_at=not_applicable seed_elapsed_ms=0.00 development=True
+2026-08-07 16:12:33,384 INFO operation=overlord.navigation route_transition_requested requested_route=/dashboard previous_route=<startup>
+2026-08-07 16:12:33,385 INFO operation=overlord.navigation route_query_start requested_route=/dashboard previous_route=<startup>
+2026-08-07 16:12:33,400 INFO operation=overlord.navigation route_query_complete requested_route=/dashboard previous_route=<startup> elapsed_ms=4.89 failed=False
+2026-08-07 16:12:33,400 INFO operation=overlord.navigation route_render_complete requested_route=/dashboard previous_route=<startup> query_ms=4.89 render_ms=10.09 total_ms=15.28 loading_visible=False failed=False
+2026-08-07 16:12:33,409 INFO operation=overlord.navigation route_transition_ignored requested_route=/dashboard previous_route=/dashboard reason=duplicate
+2026-08-07 16:12:34,507 INFO operation=overlord.navigation route_transition_requested requested_route=/settings previous_route=/dashboard
+2026-08-07 16:12:34,510 INFO operation=overlord.navigation route_query_start requested_route=/settings previous_route=/dashboard
+2026-08-07 16:12:34,514 INFO operation=overlord.navigation route_query_complete requested_route=/settings previous_route=/dashboard elapsed_ms=4.16 failed=False
+2026-08-07 16:12:34,522 INFO operation=overlord.navigation route_render_complete requested_route=/settings previous_route=/dashboard query_ms=4.16 render_ms=7.63 total_ms=15.72 loading_visible=False failed=False

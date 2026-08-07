@@ -22,7 +22,7 @@ class WeeklyBar:
 class AttentionItem:
     task_id: int
     title: str
-    project_title: str
+    project_title: str | None
     reasons: tuple[str, ...]
 
 

@@ -130,7 +130,7 @@ def build_daily_planning(
             flags.append("Blocked")
         if item.current_plan:
             flags.append(item.current_plan.planned_date.strftime("%b %d"))
-        metadata = " · ".join([item.project_title, *flags])
+        metadata = " · ".join([item.project_title or ui_text("tasks.no_project"), *flags])
         status_colors = tokens.success if task.lifecycle_status is TaskLifecycle.COMPLETED else (
             tokens.info if task.lifecycle_status is TaskLifecycle.IN_PROGRESS else tokens.neutral
         )
@@ -184,7 +184,7 @@ def build_daily_planning(
                             ft.Column(
                                 [
                                     ft.Text(item.task.title, color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                                    ft.Text(item.project_title, color=tokens.text_muted, size=tokens.text_small),
+                                    ft.Text(item.project_title or ui_text("tasks.no_project"), color=tokens.text_muted, size=tokens.text_small),
                                 ],
                                 spacing=tokens.space_1,
                                 expand=True,
@@ -224,7 +224,8 @@ def build_daily_planning(
         result = []
         for candidate in model.candidates:
             item = candidate.item
-            if search_value and search_value not in item.task.title.lower() and search_value not in item.project_title.lower():
+            project_title = item.project_title or ui_text("tasks.no_project")
+            if search_value and search_value not in item.task.title.lower() and search_value not in project_title.lower():
                 continue
             if project_value != "all" and item.task.project_id != int(project_value):
                 continue

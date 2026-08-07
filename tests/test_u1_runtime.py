@@ -101,6 +101,16 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual("production", production.mode)
         self.assertEqual(DEFAULT_DATABASE_PATH.resolve(), production.database_path)
 
+    def test_application_owned_web_arguments_are_parsed_without_flet_cli(self):
+        self.assertTrue(main_module.web_requested(["--web", "--port", "8550"]))
+        self.assertFalse(main_module.web_requested(["--demo"]))
+        self.assertEqual(8550, main_module.web_port(["--web"]))
+        self.assertEqual(8551, main_module.web_port(["--web", "--port", "8551"]))
+        self.assertEqual(8552, main_module.web_port(["--port=8552", "--web"]))
+        self.assertEqual([], main_module._runtime_arguments(["--demo", "--web", "--port", "8550"]))
+        with self.assertRaisesRegex(ValueError, "between 1 and 65535"):
+            main_module.web_port(["--web", "--port", "70000"])
+
     def test_deterministic_demo_seed_fingerprint_and_production_isolation(self):
         production_hash = _sha256(DEFAULT_DATABASE_PATH)
         first = TEST_TEMP_ROOT / f"demo-a-{uuid.uuid4().hex}.db"
@@ -158,6 +168,19 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual(1, page.add_count)
         self.assertIs(shell, page.controls[0])
 
+    def test_root_route_resolves_to_dashboard_without_rebuilding_shell(self):
+        page = FakePage("/tasks")
+        app = OverlordApp(page, self.services, loading_delay_seconds=0.05)
+        app.mount()
+        shell = page.controls[0]
+
+        changed = asyncio.run(app.transition_to("/"))
+
+        self.assertTrue(changed)
+        self.assertEqual("/dashboard", app.state.route)
+        self.assertEqual(1, page.add_count)
+        self.assertIs(shell, page.controls[0])
+
     def test_fast_route_has_no_loading_flash_and_logs_timing(self):
         page, app = self._app(loading_delay=0.2)
         shell = page.controls[0]
@@ -196,7 +219,8 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertTrue(app.last_route_timing.failed)
         self.assertIs(shell, page.controls[0])
         self.assertIn("This page could not be loaded.", _text_values(app._content_host.content))
-        self.assertIn("contained route failure", _text_values(app._content_host.content))
+        self.assertNotIn("contained route failure", _text_values(app._content_host.content))
+        self.assertTrue(any(value.startswith("Error ID: ") for value in _text_values(app._content_host.content)))
 
 
 if __name__ == "__main__":

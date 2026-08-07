@@ -49,13 +49,13 @@ class FoundationMigrationTests(unittest.TestCase):
         for path in self.paths:
             path.unlink(missing_ok=True)
 
-    def test_fresh_database_reaches_version_five(self):
+    def test_fresh_database_reaches_version_six(self):
         path = self.database_path("fresh")
         result = MigrationRunner(ConnectionFactory(path)).migrate()
-        self.assertEqual((1, 2, 3, 4, 5), result.applied)
+        self.assertEqual((1, 2, 3, 4, 5, 6), result.applied)
         self.assertIsNone(result.backup)
         with closing(sqlite3.connect(path)) as connection:
-            self.assertEqual(5, connection.execute("PRAGMA user_version").fetchone()[0])
+            self.assertEqual(6, connection.execute("PRAGMA user_version").fetchone()[0])
             self.assertEqual("ok", connection.execute("PRAGMA integrity_check").fetchone()[0])
             self.assertEqual([], connection.execute("PRAGMA foreign_key_check").fetchall())
             self.assertEqual(1, connection.execute("SELECT COUNT(*) FROM settings").fetchone()[0])
@@ -134,9 +134,49 @@ class FoundationMigrationTests(unittest.TestCase):
         first = runner.migrate(target_version=4)
         self.assertEqual(4, first.to_version)
         final = runner.migrate()
-        self.assertEqual((5,), final.applied)
+        self.assertEqual((5, 6), final.applied)
         self.assertIsNotNone(final.backup)
         self.paths.extend((final.backup.database_path, final.backup.manifest_path))
+
+    def test_version_five_records_and_relationships_survive_nullable_project_migration(self):
+        path = self.database_path("nullable-project")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate(target_version=5)
+        with closing(sqlite3.connect(path)) as connection:
+            connection.execute("PRAGMA foreign_keys=ON")
+            project_id = connection.execute("INSERT INTO projects(title) VALUES ('Preserve me')").lastrowid
+            task_id = connection.execute(
+                "INSERT INTO tasks(project_id,title,scheduled_date,lifecycle_status) VALUES (?,?,?,'planned')",
+                (project_id, "Preserve Task", "2026-08-07"),
+            ).lastrowid
+            plan_id = connection.execute(
+                "INSERT INTO task_plans(task_id,planned_date,planned_week_start) VALUES (?,?,?)",
+                (task_id, "2026-08-07", "2026-08-03"),
+            ).lastrowid
+            blocker_id = connection.execute(
+                "INSERT INTO blockers(task_id,type,description) VALUES (?,'other','Preserve blocker')",
+                (task_id,),
+            ).lastrowid
+            connection.commit()
+
+        result = runner.migrate()
+        self.assertEqual((6,), result.applied)
+        self.assertIsNotNone(result.backup)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        with closing(sqlite3.connect(path)) as migrated:
+            migrated.execute("PRAGMA foreign_keys=ON")
+            project_column = next(row for row in migrated.execute("PRAGMA table_info(tasks)") if row[1] == "project_id")
+            self.assertEqual(0, project_column[3])
+            self.assertEqual((task_id, project_id, "Preserve Task"), migrated.execute(
+                "SELECT id,project_id,title FROM tasks WHERE id=?", (task_id,)
+            ).fetchone())
+            self.assertEqual((plan_id, task_id), migrated.execute(
+                "SELECT id,task_id FROM task_plans WHERE id=?", (plan_id,)
+            ).fetchone())
+            self.assertEqual((blocker_id, task_id), migrated.execute(
+                "SELECT id,task_id FROM blockers WHERE id=?", (blocker_id,)
+            ).fetchone())
+            self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
 
 
 if __name__ == "__main__":

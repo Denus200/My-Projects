@@ -25,7 +25,7 @@ class CreateTask:
 
     def execute(
         self,
-        project_id: int,
+        project_id: int | None,
         title: str,
         *,
         description: str = "",
@@ -38,24 +38,32 @@ class CreateTask:
         urgency: bool | None = None,
         estimate_minutes: int | None = None,
         milestone_id: int | None = None,
+        blocker_type: BlockerType | None = None,
+        blocker_description: str | None = None,
     ) -> Task:
         clean_title = require_task_title(title)
         validate_slot(today_group, position)
         estimate = validate_estimate(estimate_minutes)
+        clean_blocker = (blocker_description or "").strip()
+        if blocker_type is not None and not clean_blocker:
+            raise ValueError("Blocker description is required.")
+        if clean_blocker and blocker_type is None:
+            blocker_type = BlockerType.OTHER
         if today_group is TodayGroup.PRIMARY:
             require_definition_of_done(definition_of_done, context="assigning a Primary slot")
         if milestone_id is not None:
             require_definition_of_done(definition_of_done, context="attaching to a Milestone")
-        chosen_date = planned_date or date.today()
+        chosen_date = planned_date or (date.today() if today_group is not None else None)
+        lifecycle = TaskLifecycle.PLANNED if chosen_date else TaskLifecycle.BACKLOG
         with self.uow_factory() as uow:
-            if not uow.projects.get(project_id):
+            if project_id is not None and not uow.projects.get(project_id):
                 raise ValueError(f"Project {project_id} does not exist.")
             task = uow.tasks.create(
                 project_id,
                 clean_title,
-                TaskLifecycle.PLANNED,
+                lifecycle,
                 description=description.strip(),
-                planned_date=chosen_date,
+                planned_date=chosen_date or date.today(),
                 definition_of_done=(definition_of_done or "").strip() or None,
                 next_action=(next_action or "").strip() or None,
                 importance=importance,
@@ -63,8 +71,11 @@ class CreateTask:
                 estimate_minutes=estimate,
                 milestone_id=milestone_id,
             )
-            first_day = 6 if uow.settings.get().first_day_of_week == "sunday" else 0
-            uow.tasks.assign_plan(task.id, chosen_date, today_group, position, week_start(chosen_date, first_day))
+            if chosen_date is not None:
+                first_day = 6 if uow.settings.get().first_day_of_week == "sunday" else 0
+                uow.tasks.assign_plan(task.id, chosen_date, today_group, position, week_start(chosen_date, first_day))
+            if blocker_type is not None:
+                uow.tasks.open_blocker(task.id, blocker_type, clean_blocker)
             return uow.tasks.get(task.id)
 
 
@@ -82,6 +93,10 @@ class UpdateTask:
             if not current:
                 raise ValueError(f"Task {task_id} does not exist.")
             effective_dod = changes.get("definition_of_done", current.definition_of_done)
+            if "project_id" in changes:
+                project_id = changes["project_id"]
+                if project_id is not None and not uow.projects.get(int(project_id)):
+                    raise ValueError(f"Project {project_id} does not exist.")
             if changes.get("milestone_id", current.milestone_id) is not None:
                 require_definition_of_done(effective_dod, context="attaching to a Milestone")
             return uow.tasks.update(task_id, **changes)

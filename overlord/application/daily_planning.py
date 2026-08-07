@@ -82,7 +82,7 @@ class GetDailyPlanningQuery:
                     0 if candidate.item.task.id in assigned_ids else 1,
                     0 if candidate.is_overdue else 1,
                     candidate.item.current_plan.planned_date if candidate.item.current_plan else date.max,
-                    candidate.item.project_title.lower(),
+                    (candidate.item.project_title or "").lower(),
                     candidate.item.task.title.lower(),
                 )
             )

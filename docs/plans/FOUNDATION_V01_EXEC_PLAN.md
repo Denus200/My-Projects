@@ -6,7 +6,7 @@
 - Branch: `foundation-v0.1`
 - Approval: Approved for implementation
 - Last update: 2026-08-06
-- Current phase: Phases 0–4 implementation
+- Current phase: Foundation implementation complete through UX Phase U5
 
 ## Source-of-Truth Order
 
@@ -34,7 +34,7 @@ Phases 0–4 deliver baseline safety, shell/themes, Dashboard, Projects/Tasks, S
 
 ## Information Architecture
 
-Routes: `/dashboard`, `/tasks`, `/projects`, `/projects/{id}`, `/cycles`, `/cycles/{id}`, and `/settings`. Unknown routes show a contained not-found state. Dashboard composes Today, Weekly Progress, Current Cycle, Needs Attention, and a replaceable static decorative slot.
+Routes: `/dashboard`, `/planning/daily`, `/tasks`, `/projects`, `/projects/{id}`, `/cycles`, `/cycles/new`, `/cycles/{id}`, and `/settings`. Unknown routes show a contained not-found state. Dashboard composes Today, Weekly Progress, Current Cycle, and Needs Attention without decorative filler. Settings contains only Appearance, Planning, and Startup categories.
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Presentation → Application → Domain; Infrastructure implements ports. Domain
 
 ## Data, Migration, and Recovery
 
-`0001_baseline` adopts or creates the legacy schema and ledger; `0002_settings` adds typed preferences; `0003_task_planning_attention` adds canonical Task lifecycle, append-only planning/history, and Blockers; `0004_project_task_workflows` adds Project workflow metadata; `0005_cycles_milestones_outcomes` adds Cycles, Milestones, junctions, and Weekly Outcomes. A validated SQLite API backup precedes any pending migration batch. Unknown legacy shapes and migration checksum drift fail closed.
+`0001_baseline` adopts or creates the legacy schema and ledger; `0002_settings` adds typed preferences; `0003_task_planning_attention` adds canonical Task lifecycle, append-only planning/history, and Blockers; `0004_project_task_workflows` adds Project workflow metadata; `0005_cycles_milestones_outcomes` adds Cycles, Milestones, junctions, and Weekly Outcomes; `0006_standalone_tasks` makes Task-to-Project optional without changing existing records. A validated SQLite API backup precedes any pending migration batch. Unknown legacy shapes and migration checksum drift fail closed.
 
 ## Design System
 
@@ -95,3 +95,7 @@ Real logo/Windows icon; permanent Task Detail container; decorative animation re
 
 - 2026-08-06: Baseline recorded; implementation checklist initialized.
 - 2026-08-06: Phases 0–4 implemented; 35 tests passed; actual production-copy migration reached v5 with rows preserved and a validated backup; production source hash, size, and timestamp remained unchanged.
+- 2026-08-07: UX Phase U2 adds standalone Tasks, compact Quick Task capture, progressive details, browsing filters, and migration `0006_standalone_tasks`.
+- 2026-08-07: UX Phase U3 replaces Project CRUD surfaces with browse-first summaries, transient creation, honest eligible-Task progress, and execution-oriented Project Detail. No migration was required.
+- 2026-08-07: UX Phase U4 replaces Cycle CRUD surfaces with browse-first summaries, an atomic five-step creation wizard, explicit Weekly Outcome progress, and execution-oriented Cycle Detail. No migration was required.
+- 2026-08-07: UX Phase U5 completes Foundation with compact categorized Settings, centralized Presentation copy, shared dialog/success patterns, semantic theme defaults, contained route errors, accessibility/responsive hardening, and U1-U4 regression cleanup. No migration was required.

@@ -10,11 +10,12 @@ from time import perf_counter
 
 from overlord.bootstrap import DEFAULT_DATABASE_PATH, REPOSITORY_ROOT, bootstrap
 from overlord.domain.cycles import CycleStatus, WeeklyOutcomeStatus
+from overlord.domain.projects import ProjectStatus
 from overlord.domain.tasks import BlockerType, TaskLifecycle, TodayGroup
 
 
 DEMO_DATABASE_PATH = REPOSITORY_ROOT / "data" / "demo" / "overlord_demo.db"
-DEMO_SEED_VERSION = 1
+DEMO_SEED_VERSION = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,8 +82,8 @@ def _reusable_seed_summary(database_path: Path, selected_day: date) -> DemoSeedS
             )
         else:
             valid = (
-                summary.project_count == 4
-                and summary.task_count == 21
+                summary.project_count == 7
+                and summary.task_count == 22
                 and summary.primary_count == 3
                 and summary.secondary_count == 4
                 and summary.cycle_title == "Career Launch — Cycle 2"
@@ -138,10 +139,21 @@ def seed_demo_database(
         ("Confident English", "Practice clear spoken explanations for interviews.", "Weekly speaking practice"),
         ("Overlord", "Build a calmer personal execution system.", "Foundation UX redesign"),
         ("Home", "Small recurring household responsibilities.", "Weekly reset"),
+        ("Health Admin", "Collect appointments and health paperwork without forcing a false plan.", "Not started"),
+        ("Website Launch", "A completed outcome retained for progress and history review.", "Released"),
+        ("Old Job Search", "An archived context kept available without competing for attention.", "Archived"),
     )
     for title, description, stage in project_specs:
         project = services.projects.create_project.execute(title, description)
         projects[title] = services.projects.update_project.execute(project.id, stage_label=stage)
+    projects["Website Launch"] = services.projects.update_project.execute(
+        projects["Website Launch"].id,
+        status=ProjectStatus.COMPLETED,
+    )
+    projects["Old Job Search"] = services.projects.update_project.execute(
+        projects["Old Job Search"].id,
+        status=ProjectStatus.ARCHIVED,
+    )
 
     week_start = selected_day - timedelta(days=selected_day.weekday())
     cycle_start = week_start - timedelta(weeks=2)
@@ -182,6 +194,8 @@ def seed_demo_database(
         "Close the Cycle and choose the next focus",
     )
     for week_number, title in enumerate(weekly_titles, start=1):
+        if week_number == 12:
+            continue
         status = WeeklyOutcomeStatus.PLANNED
         if week_number in {1, 2}:
             status = WeeklyOutcomeStatus.ACHIEVED
@@ -194,6 +208,43 @@ def seed_demo_database(
             f"Week {week_number} outcome is reviewed against its stated result.",
             status,
         )
+
+    services.cycles.create_cycle.execute(
+        "Personal Systems - Next Cycle",
+        "Choose the next focused execution period after the current Cycle closes.",
+        cycle.end_date + timedelta(days=1),
+        12,
+    )
+    completed_cycle = services.cycles.create_cycle.execute(
+        "Foundation Reset - Cycle 1",
+        "Establish a stable weekly planning rhythm and a usable personal execution foundation.",
+        cycle_start - timedelta(weeks=12),
+        12,
+    )
+    services.cycles.connect_project.execute(completed_cycle.id, projects["Home"].id)
+    for week_number, title in enumerate(
+        (
+            "Capture the current commitments",
+            "Define the first weekly planning rhythm",
+            "Complete the initial Foundation review",
+        ),
+        start=1,
+    ):
+        services.cycles.set_weekly_outcome.execute(
+            completed_cycle.id,
+            week_number,
+            title,
+            f"The result for historical week {week_number} is recorded and reviewed.",
+            WeeklyOutcomeStatus.ACHIEVED if week_number < 3 else WeeklyOutcomeStatus.PARTIAL,
+        )
+    services.cycles.change_status.execute(completed_cycle.id, CycleStatus.COMPLETED)
+    archived_cycle = services.cycles.create_cycle.execute(
+        "Archived Planning Experiment",
+        "Preserve an earlier planning experiment without keeping it active.",
+        cycle_start - timedelta(weeks=24),
+        8,
+    )
+    services.cycles.change_status.execute(archived_cycle.id, CycleStatus.ARCHIVED)
 
     created_tasks = []
 
@@ -282,6 +333,15 @@ def seed_demo_database(
     create_task("Portfolio Refresh", "Reply to a recruiter", selected_day, group=TodayGroup.SECONDARY, position=2, next_action="Confirm availability for a short call.", urgency=True, estimate=15)
     create_task("Portfolio Refresh", "Update LinkedIn headline", selected_day, group=TodayGroup.SECONDARY, position=3, next_action="Draft one outcome-focused headline.", importance=True, estimate=15, connect_to_cycle=True)
     create_task("Home", "Replace cat litter", selected_day, group=TodayGroup.SECONDARY, position=4, definition_of_done="Litter is replaced and the area is cleaned.", estimate=10, lifecycle=TaskLifecycle.COMPLETED)
+
+    standalone = services.tasks.create_task.execute(
+        None,
+        "Buy replacement light bulbs",
+        next_action="Check the kitchen fixture size before ordering.",
+        importance=True,
+        urgency=True,
+    )
+    created_tasks.append(standalone)
 
     carried = create_task(
         "Portfolio Refresh",

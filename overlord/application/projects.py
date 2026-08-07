@@ -71,6 +71,20 @@ class ListProjectsQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class ListProjectSummariesQuery:
+    uow_factory: UnitOfWorkFactory
+
+    def execute(self, status: ProjectStatus | None = None, search: str = "") -> tuple[ProjectDetail, ...]:
+        with self.uow_factory(read_only=True) as uow:
+            projects = uow.projects.list(status, search)
+            return tuple(
+                detail
+                for project in projects
+                if (detail := uow.projects.detail(project.id)) is not None
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class GetProjectDetailQuery:
     uow_factory: UnitOfWorkFactory
 
@@ -88,4 +102,5 @@ class ProjectApplication:
     update_project: UpdateProject
     archive_project: ArchiveProject
     list_projects: ListProjectsQuery
+    list_summaries: ListProjectSummariesQuery
     get_detail: GetProjectDetailQuery

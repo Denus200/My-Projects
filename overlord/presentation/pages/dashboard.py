@@ -43,7 +43,7 @@ def _dashboard_task_row(
 ) -> ft.Control:
     task = item.task
     status, status_colors = _task_status(item, tokens)
-    metadata = [item.project_title, status]
+    metadata = [item.project_title or ui_text("tasks.no_project"), status]
     if task.estimate_minutes:
         metadata.append(f"{task.estimate_minutes} min")
     if task.importance:
@@ -289,7 +289,7 @@ def build_dashboard(
                     ft.Column(
                         [
                             ft.Text(item.title, color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                            ft.Text(item.project_title, color=tokens.text_muted, size=tokens.text_small),
+                            ft.Text(item.project_title or ui_text("tasks.no_project"), color=tokens.text_muted, size=tokens.text_small),
                             ft.Text(" · ".join(item.reasons), color=tokens.text_secondary, size=tokens.text_small),
                         ],
                         spacing=tokens.space_1,

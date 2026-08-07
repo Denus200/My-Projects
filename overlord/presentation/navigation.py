@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from .design_system.icons import IconName
+from .strings import ui_text
 
 
 class AppRoute(StrEnum):
@@ -23,11 +24,11 @@ class NavigationItem:
 
 
 NAVIGATION = (
-    NavigationItem(AppRoute.DASHBOARD, "Dashboard", IconName.DASHBOARD),
-    NavigationItem(AppRoute.TASKS, "Tasks", IconName.TASKS),
-    NavigationItem(AppRoute.PROJECTS, "Projects", IconName.PROJECTS),
-    NavigationItem(AppRoute.CYCLES, "12-Week Plans", IconName.CYCLES),
-    NavigationItem(AppRoute.SETTINGS, "Settings", IconName.SETTINGS),
+    NavigationItem(AppRoute.DASHBOARD, ui_text("nav.dashboard"), IconName.DASHBOARD),
+    NavigationItem(AppRoute.TASKS, ui_text("nav.tasks"), IconName.TASKS),
+    NavigationItem(AppRoute.PROJECTS, ui_text("nav.projects"), IconName.PROJECTS),
+    NavigationItem(AppRoute.CYCLES, ui_text("nav.cycles"), IconName.CYCLES),
+    NavigationItem(AppRoute.SETTINGS, ui_text("nav.settings"), IconName.SETTINGS),
 )
 
 

@@ -12,8 +12,11 @@ from overlord.application.cycles import (
     ConnectCycleProject,
     ConnectCycleTask,
     CreateCycle,
+    CreateCyclePlan,
     CycleApplication,
+    GetCycleWizardOptionsQuery,
     GetCycleDetailQuery,
+    ListCycleSummariesQuery,
     SearchCyclesQuery,
     SetWeeklyOutcome,
 )
@@ -24,6 +27,7 @@ from overlord.application.projects import (
     ArchiveProject,
     CreateProject,
     GetProjectDetailQuery,
+    ListProjectSummariesQuery,
     ListProjectsQuery,
     ProjectApplication,
     UpdateProject,
@@ -71,7 +75,7 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
     uow = SqliteUnitOfWorkFactory(factory)
     projects = ProjectApplication(
         CreateProject(uow), UpdateProject(uow), ArchiveProject(uow),
-        ListProjectsQuery(uow), GetProjectDetailQuery(uow),
+        ListProjectsQuery(uow), ListProjectSummariesQuery(uow), GetProjectDetailQuery(uow),
     )
     tasks = TaskApplication(
         CreateTask(uow), UpdateTask(uow), ChangeTaskLifecycle(uow), AssignTaskPlan(uow),
@@ -80,10 +84,10 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
     )
     settings = SettingsApplication(GetSettingsQuery(uow), UpdateSettings(uow))
     cycles = CycleApplication(
-        CreateCycle(uow), ChangeCycleStatus(uow), ActivateCycle(uow), CompleteCycle(uow),
+        CreateCycle(uow), CreateCyclePlan(uow), ChangeCycleStatus(uow), ActivateCycle(uow), CompleteCycle(uow),
         ArchiveCycle(uow), ConnectCycleProject(uow),
         ConnectCycleTask(uow), ConnectCycleMilestone(uow), SetWeeklyOutcome(uow),
-        SearchCyclesQuery(uow), GetCycleDetailQuery(uow),
+        SearchCyclesQuery(uow), ListCycleSummariesQuery(uow), GetCycleWizardOptionsQuery(uow), GetCycleDetailQuery(uow),
     )
     return BootstrapResult(
         ApplicationServices(

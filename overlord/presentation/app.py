@@ -24,6 +24,7 @@ from overlord.presentation.pages.projects import build_projects
 from overlord.presentation.pages.settings import build_settings
 from overlord.presentation.pages.tasks import build_tasks
 from overlord.presentation.state import AppSessionState
+from overlord.presentation.strings import ui_text
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,12 +62,14 @@ class OverlordApp:
         current = page.route or "/"
         self.state.route = initial if current in {"", "/"} else current
         self.page.on_route_change = self._on_route_change
+        self.page.on_resize = self._on_page_resize
 
         self._mounted = False
         self._transition_generation = 0
         self._scheduled_route: str | None = None
         self._pending_route: str | None = None
         self._transition_loading_visible = False
+        self._settings_narrow: bool | None = None
         self.last_route_timing: RouteTiming | None = None
         self._sidebar_host: ft.Container | None = None
         self._content_host: ft.Container | None = None
@@ -79,7 +82,7 @@ class OverlordApp:
     def mount(self) -> None:
         if self._mounted:
             return
-        self.page.title = "Overlord"
+        self.page.title = ui_text("app.name")
         self.page.padding = 0
         self.page.theme = build_light_theme()
         self.page.dark_theme = build_dark_theme()
@@ -116,6 +119,15 @@ class OverlordApp:
 
     async def _on_route_change(self, event) -> None:
         await self.transition_to(event.route)
+
+    def _on_page_resize(self, _event=None) -> None:
+        if not self._mounted or route_family(urlparse(self.state.route).path) is not AppRoute.SETTINGS:
+            return
+        narrow = self._is_settings_narrow()
+        if self._settings_narrow == narrow:
+            return
+        self._settings_narrow = narrow
+        self.render()
 
     async def transition_to(self, route: str) -> bool:
         requested_route = self._canonical_route(route)
@@ -265,14 +277,16 @@ class OverlordApp:
 
     def report_error(self, message: str) -> None:
         self.state.error_message = message
+        self.state.notice_message = None
         self._refresh_banner(self._tokens())
         self.page.update()
 
-    def apply_settings(self, settings) -> None:
+    def apply_settings(self, settings, notice_message: str | None = None) -> None:
         sidebar_changed = self.state.sidebar_collapsed != settings.sidebar_collapsed
         self.state.theme_mode = settings.theme_mode
         self.state.sidebar_collapsed = settings.sidebar_collapsed
         self.state.error_message = None
+        self.state.notice_message = notice_message
         tokens = self._tokens()
         self._apply_page_theme(tokens)
         if sidebar_changed:
@@ -379,6 +393,8 @@ class OverlordApp:
         value = (route or "/dashboard").strip()
         if not value.startswith("/"):
             value = f"/{value}"
+        if value == "/":
+            return AppRoute.DASHBOARD.value
         return value
 
     @staticmethod
@@ -441,15 +457,16 @@ class OverlordApp:
             self._nav_labels[item.route] = label
             items.append(button)
         collapse_name = IconName.EXPAND if collapsed else IconName.COLLAPSE
+        collapse_label = ui_text("nav.expand_sidebar") if collapsed else ui_text("nav.collapse_sidebar")
         items.append(
             ft.Container(
                 ft.Button(
-                    lucide_icon(collapse_name, color=tokens.text_secondary, size=tokens.icon_medium, label="Expand sidebar" if collapsed else "Collapse sidebar"),
+                    lucide_icon(collapse_name, color=tokens.text_secondary, size=tokens.icon_medium, label=collapse_label),
                     bgcolor=tokens.app_bar,
                     elevation=0,
                     width=width - tokens.space_4,
                     height=48,
-                    tooltip="Expand sidebar" if collapsed else "Collapse sidebar",
+                    tooltip=collapse_label,
                     on_click=self.toggle_sidebar,
                 ),
                 expand=True,
@@ -488,9 +505,9 @@ class OverlordApp:
 
     def _not_found(self, tokens: ThemeTokens) -> ft.Control:
         return ft.Column([
-            ft.Text("Page not found", size=tokens.text_display, color=tokens.text_primary, weight=ft.FontWeight.W_700),
-            ft.Text("This route is not part of Foundation v0.1.", color=tokens.text_secondary),
-            ft.Button("Go to Dashboard", bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=lambda _e: self.navigate(AppRoute.DASHBOARD.value)),
+            ft.Text(ui_text("app.not_found.title"), size=tokens.text_display, color=tokens.text_primary, weight=ft.FontWeight.W_700),
+            ft.Text(ui_text("app.not_found.description"), color=tokens.text_secondary),
+            ft.Button(ui_text("app.not_found.action"), bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=lambda _e: self.navigate(AppRoute.DASHBOARD.value)),
         ], spacing=tokens.space_4)
 
     def _page_content(self, tokens: ThemeTokens, path: str, family: AppRoute | None) -> ft.Control:
@@ -499,20 +516,57 @@ class OverlordApp:
         if family is AppRoute.DAILY_PLANNING:
             return build_daily_planning(self.services, tokens, self.state.route, self.navigate, self.report_error)
         if family is AppRoute.TASKS:
-            return build_tasks(self.services, tokens, self.state, self.render, self.report_error)
+            return build_tasks(self.services, tokens, self.state, self.render, self.report_error, self.page)
         if family is AppRoute.PROJECTS:
-            return build_projects(self.services, tokens, path, self.navigate, self.render, self.report_error)
+            return build_projects(
+                self.services,
+                tokens,
+                path,
+                self.navigate,
+                self.render,
+                self.report_error,
+                self.state,
+                self.page,
+            )
         if family is AppRoute.CYCLES:
-            return build_cycles(self.services, tokens, path, self.navigate, self.render, self.report_error)
+            return build_cycles(
+                self.services,
+                tokens,
+                path,
+                self.navigate,
+                self.render,
+                self.report_error,
+                self.state,
+                self.page,
+            )
         if family is AppRoute.SETTINGS:
-            return build_settings(self.services, tokens, self.apply_settings, self.report_error)
+            self._settings_narrow = self._is_settings_narrow()
+            return build_settings(
+                self.services,
+                tokens,
+                self.apply_settings,
+                self.report_error,
+                self.state,
+                self.page,
+            )
         return self._not_found(tokens)
 
+    def _is_settings_narrow(self) -> bool:
+        return float(getattr(self.page, "width", 1280) or 1280) < 1180
+
     def _route_error(self, tokens: ThemeTokens, error: Exception) -> ft.Control:
+        error_id = uuid.uuid4().hex[:12]
+        self.logger.exception(
+            "route_content_failed error_id=%s route=%s error_class=%s",
+            error_id,
+            self.state.route,
+            error.__class__.__name__,
+        )
         return ft.Column([
-            ft.Text("This page could not be loaded.", size=tokens.text_title, color=tokens.error.text, weight=ft.FontWeight.W_600),
-            ft.Text(str(error), color=tokens.text_secondary),
-            ft.Button("Try again", on_click=lambda _e: self.render()),
+            ft.Text(ui_text("app.route_error.title"), size=tokens.text_title, color=tokens.error.text, weight=ft.FontWeight.W_600),
+            ft.Text(ui_text("app.route_error.description"), color=tokens.text_secondary),
+            ft.Text(ui_text("app.route_error.id", error_id=error_id), color=tokens.text_muted, size=tokens.text_small),
+            ft.Button(ui_text("common.try_again"), on_click=lambda _e: self.render()),
         ], spacing=tokens.space_3)
 
     def _refresh_banner(self, tokens: ThemeTokens) -> None:
@@ -523,11 +577,25 @@ class OverlordApp:
             self._banner_host.controls.append(
                 ft.Container(
                     ft.Row([
-                        lucide_icon(IconName.ALERT, color=tokens.error.text, size=tokens.icon_medium, label="Error"),
+                        lucide_icon(IconName.ALERT, color=tokens.error.text, size=tokens.icon_medium, label=ui_text("common.error")),
                         ft.Text(self.state.error_message, color=tokens.error.text, expand=True),
-                        ft.TextButton("Dismiss", on_click=lambda _e: self._dismiss_error()),
+                        ft.TextButton(ui_text("common.dismiss"), on_click=lambda _e: self._dismiss_error()),
                     ]),
                     bgcolor=tokens.error.background,
+                    border_radius=tokens.radius_medium,
+                    padding=tokens.space_3,
+                )
+            )
+        elif self.state.notice_message:
+            self._banner_host.controls.append(
+                ft.Container(
+                    ft.Row([
+                        lucide_icon(IconName.CHECK, color=tokens.success.text, size=tokens.icon_medium, label=ui_text("common.success")),
+                        ft.Text(self.state.notice_message, color=tokens.success.text, expand=True),
+                        ft.TextButton(ui_text("common.dismiss"), on_click=lambda _e: self._dismiss_notice()),
+                    ]),
+                    bgcolor=tokens.success.background,
+                    border=ft.Border.all(tokens.border_width, tokens.success.main),
                     border_radius=tokens.radius_medium,
                     padding=tokens.space_3,
                 )
@@ -535,6 +603,11 @@ class OverlordApp:
 
     def _dismiss_error(self) -> None:
         self.state.error_message = None
+        self._refresh_banner(self._tokens())
+        self.page.update()
+
+    def _dismiss_notice(self) -> None:
+        self.state.notice_message = None
         self._refresh_banner(self._tokens())
         self.page.update()
 

@@ -25,10 +25,12 @@ Database: `E:\Projects\Overlord\data\demo\overlord_demo.db`
 
 ```powershell
 $env:OVERLORD_DEMO = "1"
-flet run --web --port 8552 -r Overlord/main.py
+python Overlord/main.py --web --port 8550
 ```
 
 Database: `E:\Projects\Overlord\data\demo\overlord_demo.db`
+
+The application-owned web entry point does not automatically launch Chrome. Open `http://127.0.0.1:8550/` in the browser you choose. The Flet CLI launcher is not used because its multi-process import path stalls under the verified Python 3.14/Flet 0.84 Windows environment.
 
 `--demo` and `OVERLORD_DEMO=1` resolve to the same absolute path and run the same deterministic seed preparation before Flet serves the first session. A missing, stale, or modified demo is reset; an already verified canonical seed is reused. Additional web sessions reuse the completed process-level preparation.
 

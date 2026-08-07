@@ -34,6 +34,7 @@ class Migration:
     name: str
     signature: str
     action: MigrationAction
+    requires_foreign_keys_off: bool = False
 
     @property
     def checksum(self) -> str:
@@ -405,12 +406,76 @@ def _migration_0005(connection: sqlite3.Connection) -> None:
     connection.execute("CREATE INDEX idx_cycle_tasks_open ON cycle_tasks(cycle_id, disconnected_at)")
 
 
+def _migration_0006(connection: sqlite3.Connection) -> None:
+    """Allow a Task to exist independently of a Project.
+
+    SQLite cannot remove a NOT NULL constraint in place. Rebuild only the
+    parent table while deferring child foreign-key checks until the replacement
+    table has the canonical ``tasks`` name again.
+    """
+    connection.execute(
+        """
+        CREATE TABLE tasks_u2 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            scheduled_date TEXT NOT NULL,
+            planned_minutes INTEGER,
+            status TEXT NOT NULL DEFAULT 'planned',
+            comment TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            lifecycle_status TEXT CHECK (lifecycle_status IN ('backlog','planned','in_progress','completed','cancelled')),
+            definition_of_done TEXT,
+            next_action TEXT,
+            importance INTEGER CHECK (importance IN (0,1)),
+            urgency INTEGER CHECK (urgency IN (0,1)),
+            started_at TEXT,
+            completed_at TEXT,
+            archived_at TEXT,
+            milestone_id INTEGER REFERENCES milestones(id) ON DELETE SET NULL,
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE RESTRICT
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO tasks_u2 (
+            id, project_id, title, description, scheduled_date, planned_minutes,
+            status, comment, created_at, updated_at, lifecycle_status,
+            definition_of_done, next_action, importance, urgency, started_at,
+            completed_at, archived_at, milestone_id
+        )
+        SELECT id, project_id, title, description, scheduled_date, planned_minutes,
+               status, comment, created_at, updated_at, lifecycle_status,
+               definition_of_done, next_action, importance, urgency, started_at,
+               completed_at, archived_at, milestone_id
+        FROM tasks
+        """
+    )
+    connection.execute("DROP TABLE tasks")
+    connection.execute("ALTER TABLE tasks_u2 RENAME TO tasks")
+    connection.execute("CREATE INDEX idx_tasks_scheduled_date ON tasks(scheduled_date)")
+    connection.execute("CREATE INDEX idx_tasks_project_id ON tasks(project_id)")
+    connection.execute("CREATE INDEX idx_tasks_lifecycle_completed ON tasks(lifecycle_status, completed_at)")
+    connection.execute("CREATE INDEX idx_tasks_project_lifecycle ON tasks(project_id, lifecycle_status, updated_at)")
+    connection.execute("CREATE INDEX idx_tasks_milestone_lifecycle ON tasks(milestone_id, lifecycle_status)")
+
+
 MIGRATIONS = (
     Migration(1, "baseline", "legacy-project-task-schema-v1", _migration_0001),
     Migration(2, "settings", "typed-singleton-settings-v1", _migration_0002),
     Migration(3, "task_planning_attention", "canonical-task-plan-history-blockers-v2", _migration_0003),
     Migration(4, "project_task_workflows", "project-stage-timestamps-indexes-v1", _migration_0004),
     Migration(5, "cycles_milestones_outcomes", "cycle-junction-weekly-outcome-v1", _migration_0005),
+    Migration(
+        6,
+        "standalone_tasks",
+        "nullable-task-project-preserve-all-records-v1",
+        _migration_0006,
+        requires_foreign_keys_off=True,
+    ),
 )
 
 
@@ -501,7 +566,10 @@ class MigrationRunner:
         applied: list[int] = []
         with self.factory.open() as connection:
             for migration in pending:
+                foreign_keys_disabled = migration.requires_foreign_keys_off
                 try:
+                    if foreign_keys_disabled:
+                        connection.execute("PRAGMA foreign_keys = OFF")
                     connection.execute("BEGIN IMMEDIATE")
                     migration.action(connection)
                     _create_ledger(connection)
@@ -526,6 +594,9 @@ class MigrationRunner:
                     raise MigrationError(
                         f"Migration {migration.version:04d}_{migration.name} failed."
                     ) from error
+                finally:
+                    if foreign_keys_disabled:
+                        connection.execute("PRAGMA foreign_keys = ON")
             integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
             foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
             if integrity != "ok" or foreign_keys:

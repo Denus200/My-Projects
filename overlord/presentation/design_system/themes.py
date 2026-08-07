@@ -8,6 +8,20 @@ from .tokens import DARK_TOKENS, LIGHT_TOKENS, ThemeTokens
 def _theme(tokens: ThemeTokens) -> ft.Theme:
     return ft.Theme(
         font_family="Segoe UI",
+        focus_color=tokens.accent_primary,
+        hover_color=tokens.soft_red_background,
+        disabled_color=tokens.text_muted,
+        divider_color=tokens.border_default,
+        card_bgcolor=tokens.surface_card,
+        scaffold_bgcolor=tokens.app_background,
+        dialog_theme=ft.DialogTheme(
+            bgcolor=tokens.surface_elevated,
+            elevation=0,
+            actions_padding=tokens.space_4,
+        ),
+        button_theme=ft.ButtonTheme(
+            style=ft.ButtonStyle(elevation=0),
+        ),
         color_scheme=ft.ColorScheme(
             primary=tokens.accent_primary,
             on_primary=tokens.on_accent,

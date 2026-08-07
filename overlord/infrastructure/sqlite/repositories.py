@@ -3,7 +3,15 @@ from __future__ import annotations
 import sqlite3
 from datetime import date, datetime, timedelta
 
-from overlord.application.common import CycleDetail, ProjectDetail, SettingsData, StatusHistoryEntry, TaskListItem
+from overlord.application.common import (
+    CycleDetail,
+    CycleSummary,
+    ProjectBlockerItem,
+    ProjectDetail,
+    SettingsData,
+    StatusHistoryEntry,
+    TaskListItem,
+)
 from overlord.domain.cycles import (
     Cycle,
     CycleStatus,
@@ -171,8 +179,8 @@ class SqliteProjectRepository:
             clauses.append("status = ?")
             values.append(status.value)
         if search.strip():
-            clauses.append("title LIKE ?")
-            values.append(f"%{search.strip()}%")
+            clauses.append("(title LIKE ? OR COALESCE(description, '') LIKE ?)")
+            values.extend((f"%{search.strip()}%", f"%{search.strip()}%"))
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         rows = self.connection.execute(
             f"SELECT * FROM projects {where} ORDER BY updated_at DESC, id DESC", values
@@ -183,19 +191,78 @@ class SqliteProjectRepository:
         project = self.get(project_id)
         if not project:
             return None
-        row = self.connection.execute(
+        counts = self.connection.execute(
             """
-            SELECT COUNT(*) AS task_count,
-                   COALESCE(SUM(CASE WHEN lifecycle_status='completed' THEN 1 ELSE 0 END), 0) AS completed_count,
-                   (SELECT COUNT(*) FROM blockers b JOIN tasks bt ON bt.id=b.task_id
-                    WHERE bt.project_id=? AND b.resolved_at IS NULL) AS blocker_count,
-                   (SELECT next_action FROM tasks nt WHERE nt.project_id=? AND nt.next_action IS NOT NULL
-                    AND nt.lifecycle_status NOT IN ('completed','cancelled') ORDER BY nt.updated_at DESC LIMIT 1) AS next_action
-            FROM tasks WHERE project_id=?
+            SELECT
+                COUNT(*) AS eligible_count,
+                COALESCE(SUM(CASE WHEN lifecycle_status='completed' THEN 1 ELSE 0 END), 0) AS completed_count,
+                COALESCE(SUM(CASE WHEN lifecycle_status NOT IN ('completed','cancelled') OR lifecycle_status IS NULL THEN 1 ELSE 0 END), 0) AS open_count
+            FROM tasks
+            WHERE project_id=? AND archived_at IS NULL
+              AND (lifecycle_status != 'cancelled' OR lifecycle_status IS NULL)
             """,
-            (project_id, project_id, project_id),
+            (project_id,),
         ).fetchone()
-        return ProjectDetail(project, row["task_count"], row["completed_count"], row["blocker_count"], row["next_action"])
+        blocker_rows = self.connection.execute(
+            """
+            SELECT b.*, t.title AS task_title
+            FROM blockers b
+            JOIN tasks t ON t.id=b.task_id
+            WHERE t.project_id=? AND t.archived_at IS NULL AND b.resolved_at IS NULL
+            ORDER BY b.created_at, b.id
+            """,
+            (project_id,),
+        ).fetchall()
+        milestone_row = self.connection.execute(
+            """
+            SELECT * FROM milestones
+            WHERE project_id=? AND status IN ('planned','in_progress')
+            ORDER BY CASE status WHEN 'in_progress' THEN 0 ELSE 1 END, position, id
+            LIMIT 1
+            """,
+            (project_id,),
+        ).fetchone()
+        cycle_row = self.connection.execute(
+            """
+            SELECT c.* FROM cycles c
+            JOIN cycle_projects cp ON cp.cycle_id=c.id
+            WHERE cp.project_id=? AND c.status='active'
+            LIMIT 1
+            """,
+            (project_id,),
+        ).fetchone()
+        next_action_rows = self.connection.execute(
+            """
+            SELECT lifecycle_status, TRIM(next_action) AS next_action
+            FROM tasks
+            WHERE project_id=? AND archived_at IS NULL
+              AND lifecycle_status NOT IN ('completed','cancelled')
+              AND next_action IS NOT NULL AND TRIM(next_action) != ''
+            ORDER BY id
+            """,
+            (project_id,),
+        ).fetchall()
+        in_progress_actions = [row["next_action"] for row in next_action_rows if row["lifecycle_status"] == "in_progress"]
+        if len(in_progress_actions) == 1:
+            next_action = in_progress_actions[0]
+        elif len(next_action_rows) == 1:
+            next_action = next_action_rows[0]["next_action"]
+        else:
+            next_action = None
+        blockers = tuple(
+            ProjectBlockerItem(_blocker(row), row["task_title"])
+            for row in blocker_rows
+        )
+        return ProjectDetail(
+            project=project,
+            eligible_task_count=counts["eligible_count"],
+            completed_task_count=counts["completed_count"],
+            open_task_count=counts["open_count"],
+            blockers=blockers,
+            current_milestone=_milestone(milestone_row) if milestone_row else None,
+            active_cycle=_cycle(cycle_row) if cycle_row else None,
+            next_action=next_action,
+        )
 
     def update(self, project_id: int, **changes: object) -> Project:
         allowed = {"title", "description", "status", "stage_label", "started_at", "completed_at", "archived_at"}
@@ -219,7 +286,7 @@ class SqliteTaskRepository:
     def __init__(self, connection: sqlite3.Connection):
         self.connection = connection
 
-    def create(self, project_id: int, title: str, lifecycle: TaskLifecycle, **fields: object) -> Task:
+    def create(self, project_id: int | None, title: str, lifecycle: TaskLifecycle, **fields: object) -> Task:
         planned_date = fields.pop("planned_date", date.today())
         values = {
             "project_id": project_id,
@@ -267,8 +334,10 @@ class SqliteTaskRepository:
         values: list[object] = []
         search = str(filters.get("search") or "").strip()
         if search:
-            clauses.append("(t.title LIKE ? OR p.title LIKE ?)")
+            clauses.append("(t.title LIKE ? OR COALESCE(p.title, '') LIKE ?)")
             values.extend((f"%{search}%", f"%{search}%"))
+        if filters.get("without_project"):
+            clauses.append("t.project_id IS NULL")
         if filters.get("project_id") is not None:
             clauses.append("t.project_id = ?")
             values.append(filters["project_id"])
@@ -284,6 +353,23 @@ class SqliteTaskRepository:
             clauses.append("cp.planned_week_start = ?")
             value = filters["planned_week_start"]
             values.append(value.isoformat() if isinstance(value, date) else value)
+        date_scope = filters.get("date_scope")
+        reference_date = filters.get("reference_date") or date.today()
+        reference_value = reference_date.isoformat() if isinstance(reference_date, date) else str(reference_date)
+        if date_scope == "today":
+            clauses.append("cp.planned_date = ?")
+            values.append(reference_value)
+        elif date_scope == "this_week":
+            week_value = filters.get("reference_week_start") or week_start(
+                reference_date if isinstance(reference_date, date) else date.fromisoformat(reference_value)
+            )
+            clauses.append("cp.planned_week_start = ?")
+            values.append(week_value.isoformat() if isinstance(week_value, date) else str(week_value))
+        elif date_scope == "overdue":
+            clauses.append("cp.planned_date < ? AND t.lifecycle_status NOT IN ('completed','cancelled')")
+            values.append(reference_value)
+        elif date_scope == "unplanned":
+            clauses.append("cp.id IS NULL")
         if filters.get("today_group"):
             clauses.append("cp.today_group = ?")
             group = filters["today_group"]
@@ -295,7 +381,12 @@ class SqliteTaskRepository:
             clauses.append("t.urgency = ?")
             values.append(int(bool(filters["urgency"])))
         if filters.get("attention_only"):
-            clauses.append("(ob.open_blockers > 0 OR moves.carry_over_count >= 2 OR t.lifecycle_status IS NULL)")
+            clauses.append(
+                "(ob.open_blockers > 0 OR moves.carry_over_count >= 2 OR t.lifecycle_status IS NULL "
+                "OR (t.lifecycle_status='in_progress' AND datetime(t.updated_at) <= datetime('now','-7 days')) "
+                "OR ((t.lifecycle_status='in_progress' OR cp.today_group='primary') "
+                "AND NULLIF(TRIM(t.next_action),'') IS NULL))"
+            )
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         rows = self.connection.execute(
             f"""
@@ -306,7 +397,7 @@ class SqliteTaskRepository:
                    COALESCE(ob.open_blockers, 0) AS open_blockers,
                    COALESCE(moves.carry_over_count, 0) AS carry_over_count
             FROM tasks t
-            JOIN projects p ON p.id=t.project_id
+            LEFT JOIN projects p ON p.id=t.project_id
             LEFT JOIN task_plans cp ON cp.task_id=t.id AND cp.ended_at IS NULL
             LEFT JOIN (SELECT task_id, COUNT(*) AS open_blockers FROM blockers
                        WHERE resolved_at IS NULL GROUP BY task_id) ob ON ob.task_id=t.id
@@ -322,7 +413,7 @@ class SqliteTaskRepository:
 
     def update(self, task_id: int, **changes: object) -> Task:
         mapping = {"estimate_minutes": "planned_minutes", "lifecycle": "lifecycle_status"}
-        allowed = {"title", "description", "planned_minutes", "definition_of_done", "next_action", "importance", "urgency", "milestone_id"}
+        allowed = {"project_id", "title", "description", "planned_minutes", "definition_of_done", "next_action", "importance", "urgency", "milestone_id"}
         clean: dict[str, object] = {}
         for original, value in changes.items():
             key = mapping.get(original, original)
@@ -535,6 +626,72 @@ class SqliteCycleRepository:
         rows = self.connection.execute(f"SELECT * FROM cycles {where} ORDER BY start_date DESC,id DESC", values).fetchall()
         return [_cycle(row) for row in rows]
 
+    def summaries(self, status: CycleStatus | None = None, search: str = "") -> list[CycleSummary]:
+        cycles = self.list(status, search)
+        if not cycles:
+            return []
+        ids = tuple(cycle.id for cycle in cycles)
+        placeholders = ",".join("?" for _ in ids)
+        outcome_counts = {
+            row["cycle_id"]: row
+            for row in self.connection.execute(
+                f"""
+                SELECT cycle_id,
+                       SUM(CASE WHEN status='achieved' THEN 1 ELSE 0 END) AS achieved_count,
+                       SUM(CASE WHEN status='partial' THEN 1 ELSE 0 END) AS partial_count,
+                       SUM(CASE WHEN status='not_achieved' THEN 1 ELSE 0 END) AS not_achieved_count,
+                       SUM(CASE WHEN status='planned' THEN 1 ELSE 0 END) AS planned_count
+                FROM weekly_outcomes
+                WHERE cycle_id IN ({placeholders})
+                GROUP BY cycle_id
+                """,
+                ids,
+            )
+        }
+        projects_by_cycle: dict[int, list[Project]] = {cycle_id: [] for cycle_id in ids}
+        for row in self.connection.execute(
+            f"""
+            SELECT cp.cycle_id, p.*
+            FROM cycle_projects cp
+            JOIN projects p ON p.id=cp.project_id
+            WHERE cp.cycle_id IN ({placeholders})
+            ORDER BY cp.cycle_id, cp.position, p.id
+            """,
+            ids,
+        ):
+            projects_by_cycle[row["cycle_id"]].append(_project(row))
+        milestone_by_cycle: dict[int, Milestone] = {}
+        for row in self.connection.execute(
+            f"""
+            SELECT cm.cycle_id, m.*
+            FROM cycle_milestones cm
+            JOIN milestones m ON m.id=cm.milestone_id
+            WHERE cm.cycle_id IN ({placeholders})
+              AND m.status IN ('planned','in_progress')
+            ORDER BY cm.cycle_id,
+                     CASE m.status WHEN 'in_progress' THEN 0 ELSE 1 END,
+                     cm.position,
+                     m.id
+            """,
+            ids,
+        ):
+            milestone_by_cycle.setdefault(row["cycle_id"], _milestone(row))
+        summaries: list[CycleSummary] = []
+        for cycle in cycles:
+            counts = outcome_counts.get(cycle.id)
+            summaries.append(
+                CycleSummary(
+                    cycle=cycle,
+                    achieved_count=int(counts["achieved_count"] or 0) if counts else 0,
+                    partial_count=int(counts["partial_count"] or 0) if counts else 0,
+                    not_achieved_count=int(counts["not_achieved_count"] or 0) if counts else 0,
+                    planned_count=int(counts["planned_count"] or 0) if counts else 0,
+                    projects=tuple(projects_by_cycle[cycle.id]),
+                    next_milestone=milestone_by_cycle.get(cycle.id),
+                )
+            )
+        return summaries
+
     def detail(self, cycle_id: int) -> CycleDetail | None:
         cycle = self.get(cycle_id)
         if not cycle:
@@ -576,6 +733,22 @@ class SqliteCycleRepository:
             "INSERT OR IGNORE INTO cycle_projects (cycle_id,project_id,position) VALUES (?,?,COALESCE((SELECT MAX(position)+1 FROM cycle_projects WHERE cycle_id=?),1))",
             (cycle_id, project_id, cycle_id),
         )
+
+    def connect_milestone(self, cycle_id: int, milestone_id: int) -> None:
+        position = self.connection.execute(
+            "SELECT COALESCE(MAX(position)+1,1) FROM cycle_milestones WHERE cycle_id=?",
+            (cycle_id,),
+        ).fetchone()[0]
+        self.connection.execute(
+            "INSERT OR IGNORE INTO cycle_milestones (cycle_id,milestone_id,position) VALUES (?,?,?)",
+            (cycle_id, milestone_id, position),
+        )
+
+    def list_milestones(self) -> list[Milestone]:
+        rows = self.connection.execute(
+            "SELECT * FROM milestones ORDER BY project_id, position, id"
+        ).fetchall()
+        return [_milestone(row) for row in rows]
 
     def connect_task(self, cycle_id: int, task_id: int) -> None:
         active = self.connection.execute(

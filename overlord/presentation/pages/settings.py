@@ -1,94 +1,300 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import flet as ft
 
 from overlord.application import ApplicationServices
-from overlord.presentation.components.common import card, page_heading
+from overlord.presentation.components.common import page_heading, section_heading, setting_row
 from overlord.presentation.design_system.tokens import ThemeTokens
+from overlord.presentation.state import AppSessionState
+from overlord.presentation.strings import ui_text
+
+
+_CATEGORIES = ("appearance", "planning", "startup")
+
+
+def _safe_update(control: ft.Control) -> None:
+    try:
+        control.update()
+    except RuntimeError:
+        # Presentation unit tests construct controls without mounting a Page.
+        pass
 
 
 def build_settings(
     services: ApplicationServices,
     tokens: ThemeTokens,
-    apply_settings,
-    report_error,
+    apply_settings: Callable[..., None],
+    report_error: Callable[[str], None],
+    state: AppSessionState | None = None,
+    page: ft.Page | None = None,
 ) -> ft.Control:
     settings = services.settings.get_settings.execute()
-    theme = ft.Dropdown(
-        label="Theme",
-        value=settings.theme_mode,
-        options=[ft.DropdownOption("system", "System"), ft.DropdownOption("light", "Light"), ft.DropdownOption("dark", "Dark")],
-    )
-    motion = ft.Switch(label="Motion enabled", value=settings.motion_enabled)
-    reduced = ft.Switch(label="Reduced motion", value=settings.reduced_motion)
+    session = state or AppSessionState(route="/settings")
+    if session.settings_category not in _CATEGORIES:
+        session.settings_category = "appearance"
+
+    draft_theme = {"value": settings.theme_mode}
+    motion = ft.Switch(value=settings.motion_enabled, tooltip=ui_text("settings.motion"))
+    reduced = ft.Switch(value=settings.reduced_motion, tooltip=ui_text("settings.reduced_motion"))
     first_day = ft.Dropdown(
-        label="First day of week",
         value=settings.first_day_of_week,
-        options=[ft.DropdownOption("monday", "Monday"), ft.DropdownOption("sunday", "Sunday")],
+        options=[
+            ft.DropdownOption("monday", ui_text("settings.first_day.monday")),
+            ft.DropdownOption("sunday", ui_text("settings.first_day.sunday")),
+        ],
+        width=220,
+        dense=True,
+        border_color=tokens.border_default,
+        focused_border_color=tokens.accent_primary,
+        focused_border_width=tokens.focus_width,
+        tooltip=ui_text("settings.first_day"),
     )
-    cycle_length = ft.TextField(label="Default Cycle length", value=str(settings.default_cycle_length), keyboard_type=ft.KeyboardType.NUMBER)
+    cycle_length = ft.TextField(
+        value=str(settings.default_cycle_length),
+        keyboard_type=ft.KeyboardType.NUMBER,
+        width=120,
+        dense=True,
+        border_color=tokens.border_default,
+        focused_border_color=tokens.accent_primary,
+        focused_border_width=tokens.focus_width,
+        tooltip=ui_text("settings.cycle_length"),
+    )
+    cycle_length_control = ft.Row(
+        [cycle_length, ft.Text(ui_text("settings.weeks"), color=tokens.text_secondary)],
+        spacing=tokens.space_2,
+        tight=True,
+    )
     startup = ft.Dropdown(
-        label="Startup destination",
         value=settings.startup_destination,
         options=[
-            ft.DropdownOption("dashboard", "Dashboard"), ft.DropdownOption("tasks", "Tasks"),
-            ft.DropdownOption("projects", "Projects"), ft.DropdownOption("cycles", "12-Week Plans"),
+            ft.DropdownOption("dashboard", ui_text("nav.dashboard")),
+            ft.DropdownOption("tasks", ui_text("nav.tasks")),
+            ft.DropdownOption("projects", ui_text("nav.projects")),
+            ft.DropdownOption("cycles", ui_text("nav.cycles")),
         ],
+        width=240,
+        dense=True,
+        border_color=tokens.border_default,
+        focused_border_color=tokens.accent_primary,
+        focused_border_width=tokens.focus_width,
+        tooltip=ui_text("settings.startup_destination"),
     )
-    sidebar = ft.Switch(label="Start with sidebar collapsed", value=settings.sidebar_collapsed)
+    sidebar = ft.Switch(value=settings.sidebar_collapsed, tooltip=ui_text("settings.sidebar_collapsed"))
     message = ft.Text("", color=tokens.error.text, size=tokens.text_small)
 
-    def save(_event):
+    theme_buttons: dict[str, ft.Button] = {}
+
+    def choose_theme(value: str):
+        def choose(_event) -> None:
+            draft_theme["value"] = value
+            for theme_value, button in theme_buttons.items():
+                selected = theme_value == value
+                button.bgcolor = tokens.accent_primary if selected else tokens.surface_inner
+                button.color = tokens.on_accent if selected else tokens.text_primary
+                _safe_update(button)
+
+        return choose
+
+    for value in ("system", "light", "dark"):
+        selected = settings.theme_mode == value
+        theme_buttons[value] = ft.Button(
+            ui_text(f"settings.theme.{value}"),
+            bgcolor=tokens.accent_primary if selected else tokens.surface_inner,
+            color=tokens.on_accent if selected else tokens.text_primary,
+            elevation=0,
+            tooltip=ui_text(f"settings.theme.{value}"),
+            data=f"settings-theme-{value}",
+            on_click=choose_theme(value),
+        )
+
+    def appearance_section() -> ft.Control:
+        theme_control = ft.Row(list(theme_buttons.values()), spacing=tokens.space_2, wrap=True)
+        return _settings_panel(
+            ui_text("settings.category.appearance"),
+            ui_text("settings.appearance.description"),
+            [
+                setting_row(ui_text("settings.theme"), ui_text("settings.theme.description"), theme_control, tokens),
+                setting_row(ui_text("settings.motion"), ui_text("settings.motion.description"), motion, tokens),
+                setting_row(
+                    ui_text("settings.reduced_motion"),
+                    ui_text("settings.reduced_motion.description"),
+                    reduced,
+                    tokens,
+                ),
+                ft.Text(ui_text("settings.motion_effective_off"), color=tokens.text_muted, size=tokens.text_small),
+            ],
+            tokens,
+        )
+
+    def planning_section() -> ft.Control:
+        return _settings_panel(
+            ui_text("settings.category.planning"),
+            ui_text("settings.planning.description"),
+            [
+                setting_row(ui_text("settings.first_day"), ui_text("settings.first_day.description"), first_day, tokens),
+                setting_row(
+                    ui_text("settings.cycle_length"),
+                    ui_text("settings.cycle_length.description"),
+                    cycle_length_control,
+                    tokens,
+                ),
+            ],
+            tokens,
+        )
+
+    def startup_section() -> ft.Control:
+        return _settings_panel(
+            ui_text("settings.category.startup"),
+            ui_text("settings.startup.description"),
+            [
+                setting_row(
+                    ui_text("settings.startup_destination"),
+                    ui_text("settings.startup_destination.description"),
+                    startup,
+                    tokens,
+                ),
+                setting_row(
+                    ui_text("settings.sidebar_collapsed"),
+                    ui_text("settings.sidebar_collapsed.description"),
+                    sidebar,
+                    tokens,
+                ),
+            ],
+            tokens,
+        )
+
+    builders = {
+        "appearance": appearance_section,
+        "planning": planning_section,
+        "startup": startup_section,
+    }
+    content_host = ft.Container(content=builders[session.settings_category](), expand=True)
+    category_buttons: dict[str, ft.Button] = {}
+    category_selector = ft.Dropdown(
+        label=ui_text("settings.category"),
+        value=session.settings_category,
+        options=[ft.DropdownOption(value, ui_text(f"settings.category.{value}")) for value in _CATEGORIES],
+        dense=True,
+        border_color=tokens.border_default,
+        focused_border_color=tokens.accent_primary,
+        focused_border_width=tokens.focus_width,
+        width=320,
+    )
+
+    def select_category(value: str) -> None:
+        session.settings_category = value if value in _CATEGORIES else "appearance"
+        category_selector.value = session.settings_category
+        content_host.content = builders[session.settings_category]()
+        for category, button in category_buttons.items():
+            selected = category == session.settings_category
+            button.bgcolor = tokens.soft_red_background if selected else tokens.surface_card
+            button.color = tokens.text_primary if selected else tokens.text_secondary
+            _safe_update(button)
+        _safe_update(category_selector)
+        _safe_update(content_host)
+
+    category_selector.on_select = lambda event: select_category(event.control.value or "appearance")
+    for category in _CATEGORIES:
+        selected = category == session.settings_category
+        category_buttons[category] = ft.Button(
+            ui_text(f"settings.category.{category}"),
+            bgcolor=tokens.soft_red_background if selected else tokens.surface_card,
+            color=tokens.text_primary if selected else tokens.text_secondary,
+            elevation=0,
+            width=190,
+            data=f"settings-category-{category}",
+            on_click=lambda _event, value=category: select_category(value),
+        )
+
+    save_button: ft.Button
+
+    def save(_event) -> None:
+        message.value = ""
+        cycle_length.error = None
+        save_button.disabled = True
+        _safe_update(save_button)
         try:
             updated = services.settings.update_settings.execute(
-                theme_mode=theme.value,
-                motion_enabled=motion.value,
-                reduced_motion=reduced.value,
+                theme_mode=draft_theme["value"],
+                motion_enabled=bool(motion.value),
+                reduced_motion=bool(reduced.value),
                 first_day_of_week=first_day.value,
-                default_cycle_length=int(cycle_length.value),
+                default_cycle_length=int(cycle_length.value or ""),
                 startup_destination=startup.value,
-                sidebar_collapsed=sidebar.value,
+                sidebar_collapsed=bool(sidebar.value),
             )
-            apply_settings(updated)
-        except Exception as error:
+            apply_settings(updated, ui_text("settings.saved"))
+        except ValueError as error:
             message.value = str(error)
-            message.update()
+            message.color = tokens.error.text
+            if "cycle length" in str(error).lower() or "integer" in str(error).lower():
+                cycle_length.error = str(error)
+                _safe_update(cycle_length)
+            _safe_update(message)
+            save_button.disabled = False
+            _safe_update(save_button)
+        except Exception:
+            report_error(ui_text("settings.save_error"))
+            save_button.disabled = False
+            _safe_update(save_button)
 
-    preview = ft.ResponsiveRow([
-        ft.Container(
-            ft.Column([
-                ft.Text("Light", color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                ft.Text("Warm surfaces with crimson focus.", color=tokens.text_secondary, size=tokens.text_small),
-            ]),
-            bgcolor=tokens.surface_elevated,
-            border=ft.Border.all(tokens.focus_width if settings.theme_mode == "light" else tokens.border_width, tokens.accent_primary if settings.theme_mode == "light" else tokens.border_default),
-            border_radius=tokens.radius_medium,
-            padding=tokens.space_4,
-            col={"sm": 12, "md": 6},
-        ),
-        ft.Container(
-            ft.Column([
-                ft.Text("Dark", color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                ft.Text("Deep neutral surfaces with restrained glow.", color=tokens.text_secondary, size=tokens.text_small),
-            ]),
-            bgcolor=tokens.surface_inner,
-            border=ft.Border.all(tokens.focus_width if settings.theme_mode == "dark" else tokens.border_width, tokens.accent_primary if settings.theme_mode == "dark" else tokens.border_default),
-            border_radius=tokens.radius_medium,
-            padding=tokens.space_4,
-            col={"sm": 12, "md": 6},
-        ),
-    ], spacing=tokens.space_3, run_spacing=tokens.space_3)
-    return ft.Column([
-        page_heading("Settings", "Appearance and planning defaults stay local to this device.", tokens),
-        card("Appearance", [theme, preview, motion, reduced, ft.Text(
-            "Effective motion is disabled whenever Reduced motion is on.", color=tokens.text_muted, size=tokens.text_small
-        )], tokens),
-        card("Planning", [first_day, cycle_length], tokens),
-        card("Startup", [startup, sidebar], tokens),
-        card("Future Widget", [ft.Text(
-            "Widget defaults are reserved for the later read-only widget phase. No widget process is installed in v0.1.",
-            color=tokens.text_muted,
-        )], tokens),
-        message,
-        ft.Button("Save Settings", bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=save),
-    ], spacing=tokens.space_5, scroll=ft.ScrollMode.AUTO, expand=True)
+    save_button = ft.Button(
+        ui_text("settings.save"),
+        bgcolor=tokens.accent_primary,
+        color=tokens.on_accent,
+        elevation=0,
+        on_click=save,
+    )
+
+    page_width = float(getattr(page, "width", 1280) or 1280)
+    narrow = page_width < 1180
+    category_rail = ft.Container(
+        ft.Column(list(category_buttons.values()), spacing=tokens.space_2),
+        bgcolor=tokens.surface_card,
+        border=ft.Border.all(tokens.border_width, tokens.border_default),
+        border_radius=tokens.radius_card,
+        padding=tokens.space_3,
+        width=214,
+        visible=not narrow,
+    )
+    right_column = ft.Column(
+        [
+            ft.Container(category_selector, visible=narrow),
+            content_host,
+            message,
+            ft.Row([save_button], alignment=ft.MainAxisAlignment.END),
+        ],
+        spacing=tokens.space_4,
+        expand=True,
+    )
+    settings_layout = ft.Row(
+        [category_rail, right_column],
+        spacing=tokens.space_5,
+        vertical_alignment=ft.CrossAxisAlignment.START,
+    )
+    return ft.Column(
+        [
+            page_heading(ui_text("settings.title"), ui_text("settings.subtitle"), tokens),
+            ft.Container(settings_layout, width=1000 if not narrow else None),
+        ],
+        spacing=tokens.space_5,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+
+def _settings_panel(
+    title: str,
+    description: str,
+    controls: list[ft.Control],
+    tokens: ThemeTokens,
+) -> ft.Container:
+    return ft.Container(
+        ft.Column([section_heading(title, description, tokens), *controls], spacing=tokens.space_3),
+        bgcolor=tokens.surface_card,
+        border=ft.Border.all(tokens.border_width, tokens.border_default),
+        border_radius=tokens.radius_card,
+        padding=tokens.space_5,
+    )

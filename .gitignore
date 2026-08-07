@@ -1,6 +1,7 @@
 # Пользовательские папки
 Ref/
 ref/
+docs/
 
 # Python: виртуальные окружения и кэш
 .venv/
@@ -18,6 +19,7 @@ __pycache__/
 *.db-shm
 data/test-tmp/
 data/demo/
+data/runtime-tmp/
 
 # Flet и артефакты сборки
 .flet/

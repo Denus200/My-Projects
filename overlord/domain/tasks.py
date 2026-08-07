@@ -30,7 +30,7 @@ class BlockerType(StrEnum):
 @dataclass(frozen=True, slots=True)
 class Task:
     id: int
-    project_id: int
+    project_id: int | None
     title: str
     lifecycle_status: TaskLifecycle | None
     created_at: datetime

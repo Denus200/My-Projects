@@ -40,6 +40,71 @@ class FoundationApplicationTests(unittest.TestCase):
                 self.project.id, "Invalid estimate", estimate_minutes=0
             )
 
+    def test_standalone_task_is_backlog_without_a_plan(self):
+        task = self.services.tasks.create_task.execute(None, "  Replace hallway bulb  ")
+        editor = self.services.tasks.get_editor.execute(task.id)
+        self.assertIsNone(task.project_id)
+        self.assertEqual("Replace hallway bulb", task.title)
+        self.assertEqual(TaskLifecycle.BACKLOG, task.lifecycle_status)
+        self.assertEqual((), editor.planning_history)
+
+    def test_project_linked_task_keeps_optional_relationship(self):
+        task = self.services.tasks.create_task.execute(self.project.id, "Linked Task")
+        self.assertEqual(self.project.id, task.project_id)
+        listed = self.services.tasks.list_tasks.execute(project_id=self.project.id)
+        self.assertEqual((task.id,), tuple(item.task.id for item in listed))
+        updated = self.services.tasks.update_task.execute(task.id, project_id=None)
+        self.assertIsNone(updated.project_id)
+
+    def test_no_project_filter_returns_only_standalone_tasks(self):
+        standalone = self.services.tasks.create_task.execute(None, "Standalone")
+        self.services.tasks.create_task.execute(self.project.id, "Linked")
+        matches = self.services.tasks.list_tasks.execute(without_project=True)
+        self.assertEqual((standalone.id,), tuple(item.task.id for item in matches))
+
+    def test_quick_task_blocker_is_created_atomically(self):
+        task = self.services.tasks.create_task.execute(
+            None,
+            "Blocked capture",
+            blocker_type=BlockerType.CLARITY,
+            blocker_description="Need the final dimensions",
+        )
+        editor = self.services.tasks.get_editor.execute(task.id)
+        self.assertEqual(1, len(editor.blockers))
+        self.assertEqual("Need the final dimensions", editor.blockers[0].description)
+
+    def test_task_browsing_filters_cover_search_lifecycle_date_flags_and_attention(self):
+        today = date.today()
+        standalone = self.services.tasks.create_task.execute(
+            None, "Urgent standalone errand", importance=True, urgency=True
+        )
+        linked = self.services.tasks.create_task.execute(
+            self.project.id, "Planned Foundation work", planned_date=today, importance=True
+        )
+        overdue = self.services.tasks.create_task.execute(
+            self.project.id, "Overdue blocked work", planned_date=today - timedelta(days=2), urgency=True
+        )
+        completed = self.services.tasks.create_task.execute(
+            self.project.id, "Completed work", planned_date=today
+        )
+        self.services.tasks.complete_task.execute(completed.id)
+        self.services.tasks.open_blocker.execute(
+            overdue.id, BlockerType.DEPENDENCY, "Waiting for a response"
+        )
+
+        def ids(**filters):
+            return {item.task.id for item in self.services.tasks.list_tasks.execute(**filters)}
+
+        self.assertEqual({standalone.id}, ids(search="errand"))
+        self.assertIn(completed.id, ids(lifecycle=TaskLifecycle.COMPLETED))
+        self.assertIn(linked.id, ids(date_scope="today", reference_date=today))
+        self.assertIn(linked.id, ids(date_scope="this_week", reference_date=today))
+        self.assertEqual({overdue.id}, ids(date_scope="overdue", reference_date=today))
+        self.assertIn(standalone.id, ids(date_scope="unplanned", reference_date=today))
+        self.assertTrue({standalone.id, linked.id}.issubset(ids(importance=True)))
+        self.assertTrue({standalone.id, overdue.id}.issubset(ids(urgency=True)))
+        self.assertIn(overdue.id, ids(attention_only=True))
+
     def test_missing_task_update_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "does not exist"):
             self.services.tasks.update_task.execute(999_999, title="Missing")
@@ -96,7 +161,9 @@ class FoundationApplicationTests(unittest.TestCase):
         self.assertEqual(editor.planning_history[0].id, editor.planning_history[1].supersedes_plan_id)
 
     def test_blocker_does_not_change_task_lifecycle(self):
-        task = self.services.tasks.create_task.execute(self.project.id, "Blocked but planned")
+        task = self.services.tasks.create_task.execute(
+            self.project.id, "Blocked but planned", planned_date=date.today()
+        )
         blocker = self.services.tasks.open_blocker.execute(task.id, BlockerType.DEPENDENCY, "Waiting for input")
         self.assertEqual(TaskLifecycle.PLANNED, self.services.tasks.get_editor.execute(task.id).task.lifecycle_status)
         self.services.tasks.resolve_blocker.execute(blocker.id, "Input received")
@@ -120,7 +187,7 @@ class FoundationApplicationTests(unittest.TestCase):
         first = self.services.cycles.create_cycle.execute("First", "Outcome one", date.today())
         second = self.services.cycles.create_cycle.execute("Second", "Outcome two", date.today())
         self.services.cycles.change_status.execute(first.id, CycleStatus.ACTIVE)
-        with self.assertRaises(sqlite3.IntegrityError):
+        with self.assertRaisesRegex(ValueError, "already active"):
             self.services.cycles.change_status.execute(second.id, CycleStatus.ACTIVE)
         active = self.services.dashboard.execute().current_cycle
         self.assertEqual(first.id, active.cycle_id)

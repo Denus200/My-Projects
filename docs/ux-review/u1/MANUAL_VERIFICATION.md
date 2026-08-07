@@ -28,10 +28,10 @@ From `E:\Projects`:
 
 ```powershell
 $env:OVERLORD_DEMO = "1"
-flet run --web --port 8552 -r Overlord/main.py
+python Overlord/main.py --web --port 8550
 ```
 
-Flet opens the configured system browser automatically. If that browser is unstable on this machine, leave the server running and open `http://127.0.0.1:8552/dashboard` in the Codex in-app browser instead. Clear the demo variable after stopping the preview if the terminal will be reused:
+The application intentionally does not open the system browser. Open `http://127.0.0.1:8550/` in the browser you choose. Clear the demo variable after stopping the preview if the terminal will be reused:
 
 ```powershell
 Remove-Item Env:OVERLORD_DEMO
