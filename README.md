@@ -20,6 +20,8 @@ python -B scripts/smoke_environment.py
 python -B scripts/migration_smoke_copy.py data/overlord.db
 ```
 
+Overlord is desktop-only. Web/browser launch support has been retired; `--web` and `--port` are intentionally rejected. For realistic evaluation without touching user data, run `python main.py --demo`.
+
 The application migrates its database at startup. Before every schema-changing batch it creates and validates a backup in `data/backups`. Tests always use disposable databases.
 
 ## Read-only database diagnostics

@@ -4,7 +4,10 @@ from types import TracebackType
 
 from .connection import ConnectionFactory
 from .repositories import (
+    SqliteBlockerRepository,
     SqliteCycleRepository,
+    SqliteDashboardRepository,
+    SqlitePlanningRepository,
     SqliteProjectRepository,
     SqliteSettingsRepository,
     SqliteTaskRepository,
@@ -25,7 +28,10 @@ class SqliteUnitOfWork:
             self.connection.execute("BEGIN IMMEDIATE")
         self.projects = SqliteProjectRepository(self.connection)
         self.tasks = SqliteTaskRepository(self.connection)
+        self.planning = SqlitePlanningRepository(self.connection)
+        self.blockers = SqliteBlockerRepository(self.connection)
         self.settings = SqliteSettingsRepository(self.connection)
+        self.dashboard = SqliteDashboardRepository(self.connection)
         self.cycles = SqliteCycleRepository(self.connection, self.tasks)
         return self
 

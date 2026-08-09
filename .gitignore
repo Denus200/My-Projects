@@ -2,6 +2,8 @@
 Ref/
 ref/
 docs/
+tests/
+scripts/
 
 # Python: виртуальные окружения и кэш
 .venv/
@@ -16,10 +18,10 @@ __pycache__/
 *.sqlite3
 *.db-journal
 *.db-wal
-*.db-shm
+*.db-shmЫ
 data/test-tmp/
 data/demo/
-data/runtime-tmp/
+data/runtime-tmp/  # retired web cache; ignored until Windows releases old locked folders
 
 # Flet и артефакты сборки
 .flet/

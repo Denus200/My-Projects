@@ -2,23 +2,24 @@ import flet as ft
 import logging
 import os
 import sys
-import tempfile
 import threading
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 from overlord.bootstrap import DEFAULT_DATABASE_PATH, bootstrap
 from overlord.demo import DEMO_DATABASE_PATH, DemoSeedSummary, ensure_demo_database
-from overlord.presentation.app import OverlordApp, show_recovery
+from overlord.ui.app import OverlordApp, show_recovery
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parent
 ASSETS_DIR = REPOSITORY_ROOT / "assets"
-WEB_TEMP_DIR = REPOSITORY_ROOT / "data" / "runtime-tmp"
 DEMO_ARGUMENT = "--demo"
 WEB_ARGUMENT = "--web"
 PORT_ARGUMENT = "--port"
-DEFAULT_WEB_PORT = 8550
+WEB_RETIRED_MESSAGE = (
+    "Overlord web mode has been retired. Run the desktop application with "
+    "'python main.py' or 'python main.py --demo'."
+)
 _startup_lock = threading.Lock()
 _startup_seed: DemoSeedSummary | None = None
 
@@ -54,48 +55,13 @@ def development_requested(environment: dict[str, str] | None = None) -> bool:
     return values.get("OVERLORD_ENV", "development").strip().lower() != "production"
 
 
-def web_requested(arguments: list[str] | None = None) -> bool:
-    args = sys.argv[1:] if arguments is None else arguments
-    return WEB_ARGUMENT in args
-
-
-def web_port(arguments: list[str] | None = None) -> int:
-    args = sys.argv[1:] if arguments is None else arguments
-    raw_port: str | None = None
-    for index, argument in enumerate(args):
-        if argument == PORT_ARGUMENT and index + 1 < len(args):
-            raw_port = args[index + 1]
-            break
-        if argument.startswith(f"{PORT_ARGUMENT}="):
-            raw_port = argument.partition("=")[2]
-            break
-    if raw_port is None:
-        return DEFAULT_WEB_PORT
-    try:
-        port = int(raw_port)
-    except ValueError as error:
-        raise ValueError("Web port must be an integer.") from error
-    if not 1 <= port <= 65535:
-        raise ValueError("Web port must be between 1 and 65535.")
-    return port
-
-
-def _runtime_arguments(arguments: list[str]) -> list[str]:
-    cleaned: list[str] = []
-    skip_next = False
-    for argument in arguments:
-        if skip_next:
-            skip_next = False
-            continue
-        if argument in {DEMO_ARGUMENT, WEB_ARGUMENT}:
-            continue
-        if argument == PORT_ARGUMENT:
-            skip_next = True
-            continue
-        if argument.startswith(f"{PORT_ARGUMENT}="):
-            continue
-        cleaned.append(argument)
-    return cleaned
+def desktop_runtime_arguments(arguments: list[str]) -> list[str]:
+    if any(
+        argument in {WEB_ARGUMENT, PORT_ARGUMENT} or argument.startswith(f"{PORT_ARGUMENT}=")
+        for argument in arguments
+    ):
+        raise ValueError(WEB_RETIRED_MESSAGE)
+    return [argument for argument in arguments if argument != DEMO_ARGUMENT]
 
 
 def runtime_configuration(
@@ -139,11 +105,10 @@ def main(page: ft.Page) -> None:
     try:
         seed = prepare_startup(runtime)
         result = bootstrap(database_path)
-        application_type = "web" if bool(getattr(page, "web", False)) else "desktop"
         logging.getLogger("overlord.runtime").info(
             "runtime_start mode=%s application_type=%s database=%s demo_seed=%s seed_completed_at=%s seed_elapsed_ms=%.2f development=%s",
             runtime.mode,
-            application_type,
+            "desktop",
             database_path,
             seed.seed_action if seed else "not_applicable",
             seed.completed_at.isoformat(timespec="milliseconds") if seed and seed.completed_at else "not_applicable",
@@ -157,20 +122,12 @@ def main(page: ft.Page) -> None:
 
 if __name__ == "__main__":
     launch_arguments = sys.argv[1:]
-    launch_web = web_requested(launch_arguments)
-    launch_port = web_port(launch_arguments)
+    try:
+        flet_arguments = desktop_runtime_arguments(launch_arguments)
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        raise SystemExit(2) from None
     if STARTUP_RUNTIME.mode == "demo":
         prepare_startup(STARTUP_RUNTIME)
-    sys.argv = [sys.argv[0], *_runtime_arguments(launch_arguments)]
-    if launch_web:
-        # Force Flet's server transport without asking it to open Chrome. This
-        # avoids the Flet CLI import deadlock seen with Python 3.14 on Windows
-        # and keeps browser selection under the user's control.
-        os.environ["FLET_FORCE_WEB_SERVER"] = "1"
-        WEB_TEMP_DIR.mkdir(parents=True, exist_ok=True)
-        os.environ["TEMP"] = str(WEB_TEMP_DIR)
-        os.environ["TMP"] = str(WEB_TEMP_DIR)
-        tempfile.tempdir = str(WEB_TEMP_DIR)
-        ft.run(main, view=None, host="127.0.0.1", port=launch_port, assets_dir=str(ASSETS_DIR))
-    else:
-        ft.run(main, assets_dir=str(ASSETS_DIR))
+    sys.argv = [sys.argv[0], *flet_arguments]
+    ft.run(main, assets_dir=str(ASSETS_DIR))

@@ -6,32 +6,19 @@ Overlord is a private, local-first Windows personal operating system. Foundation
 ## Stack and commands
 Python 3.14, Flet 0.84, SQLite.
 
-From the repository root (`E:\Projects\Overlord`):
+Open `E:\Projects\Overlord` itself as the workspace root. Do not use `E:\Projects` as the project workspace when a repository-root workspace is available.
 
 - Desktop: `python main.py`
 - Demo desktop: `python main.py --demo`
 - Reset deterministic demo data: `python scripts/seed_demo.py`
-- Web preview: `python main.py --web --port 8550`
 - Test: `python -B -m unittest discover -s tests -v`
 - Environment check: `python -B scripts/smoke_environment.py`
 
-From the parent workspace (`E:\Projects`):
+Web mode is retired and intentionally rejected by `main.py`. Do not restore `--web`, `--port`, `flet run --web`, a browser preview, or a browser-based product path without a new explicit product decision. The Codex browser annotation system selects Flet's whole `flutter-view` surface rather than individual Overlord controls, so it does not provide the block-level review workflow the web experiment was meant to enable.
 
-- Production desktop: `python Overlord/main.py`
-- Demo desktop: `python Overlord/main.py --demo`
-- Demo web: set `$env:OVERLORD_DEMO = "1"`, then run `python Overlord/main.py --web --port 8550`
+Demo data is isolated at `data/demo/overlord_demo.db`. Never point demo seeding at `data/overlord.db`.
 
-Before starting a web preview, check whether port 8550 already has one running:
-
-```powershell
-Get-NetTCPConnection -LocalPort 8550 -State Listen -ErrorAction SilentlyContinue
-```
-
-If the port is occupied, reuse the existing preview or deliberately choose another port, such as `--port 8551`. Do not start a second server on the same port. Do not use `flet run` for this repository on Python 3.14; the verified application-owned `--web` entry point starts the server without automatically launching Chrome. Launch paths, database paths, and asset paths must work from either directory above.
-
-Demo data is isolated at `data/demo/overlord_demo.db`. For a web demo preview, set `OVERLORD_DEMO=1` before running Flet. Never point demo seeding at `data/overlord.db`.
-
-Source launches default to development timing logs. Set `OVERLORD_ENV=production` to disable route timing diagnostics. Runtime startup logs identify production/demo mode, desktop/web type, the resolved database, and demo seed timing.
+Source launches default to development timing logs. Set `OVERLORD_ENV=production` to disable route timing diagnostics. Runtime startup logs identify production/demo mode, desktop application type, the resolved database, and demo seed timing.
 
 ## Architecture
 Dependencies point Presentation → Application → Domain. Infrastructure implements Application ports. Domain must not import Flet; Presentation must not import SQLite or concrete repositories.
@@ -49,5 +36,7 @@ There is one Task entity. A Task may be standalone (`project_id = NULL`); never 
 
 ## References and documentation
 Decision priority is: approved product decisions → code/runtime evidence → paired reference instructions → reference images. Empty reference folders do not authorize invented category styling. Update `docs/architecture/FOUNDATION.md`, the decision log, and the execution plan when boundaries change.
+
+Read `PROJECT_CONTEXT.md` first when starting a new task or moving this repository to a new Codex workspace.
 
 Goals, Habits, Skills, Work Sessions, Weekly Reviews, AI, desktop Widget behavior, notifications, cloud sync, accounts, collaboration, and additional analytics remain outside Foundation.

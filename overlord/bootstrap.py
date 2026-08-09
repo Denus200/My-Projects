@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from overlord.application.cycles import (
+from overlord.modules.cycles.application import (
     ActivateCycle,
     ArchiveCycle,
     ChangeCycleStatus,
@@ -20,10 +20,10 @@ from overlord.application.cycles import (
     SearchCyclesQuery,
     SetWeeklyOutcome,
 )
-from overlord.application import ApplicationServices
-from overlord.application.dashboard import GetDashboardQuery
-from overlord.application.daily_planning import DailyPlanningApplication, GetDailyPlanningQuery, SaveDailyPlan
-from overlord.application.projects import (
+from overlord.app.services import ApplicationServices
+from overlord.modules.dashboard.application import GetDashboardQuery
+from overlord.modules.planning.application import DailyPlanningApplication, GetDailyPlanningQuery, SaveDailyPlan
+from overlord.modules.projects.application import (
     ArchiveProject,
     CreateProject,
     GetProjectDetailQuery,
@@ -32,8 +32,8 @@ from overlord.application.projects import (
     ProjectApplication,
     UpdateProject,
 )
-from overlord.application.settings import GetSettingsQuery, SettingsApplication, UpdateSettings
-from overlord.application.tasks import (
+from overlord.modules.settings.application import GetSettingsQuery, SettingsApplication, UpdateSettings
+from overlord.modules.tasks.application import (
     AssignTaskPlan,
     ChangeTaskLifecycle,
     CompleteTask,
@@ -100,4 +100,3 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
         ),
         migrations,
     )
-    CompleteCycle,

@@ -9,9 +9,11 @@ from pathlib import Path
 from time import perf_counter
 
 from overlord.bootstrap import DEFAULT_DATABASE_PATH, REPOSITORY_ROOT, bootstrap
-from overlord.domain.cycles import CycleStatus, WeeklyOutcomeStatus
-from overlord.domain.projects import ProjectStatus
-from overlord.domain.tasks import BlockerType, TaskLifecycle, TodayGroup
+from overlord.modules.blockers.domain import BlockerType
+from overlord.modules.cycles.domain import CycleStatus, WeeklyOutcomeStatus
+from overlord.modules.planning.domain import TodayGroup
+from overlord.modules.projects.domain import ProjectStatus
+from overlord.modules.tasks.domain import TaskLifecycle
 
 
 DEMO_DATABASE_PATH = REPOSITORY_ROOT / "data" / "demo" / "overlord_demo.db"
