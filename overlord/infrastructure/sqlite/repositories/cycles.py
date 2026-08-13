@@ -176,6 +176,42 @@ class SqliteCycleRepository:
         if not active:
             self.connection.execute("INSERT INTO cycle_tasks (cycle_id,task_id) VALUES (?,?)", (cycle_id, task_id))
 
+    def cycle_ids_for_task(self, task_id: int) -> tuple[int, ...]:
+        return tuple(
+            row[0]
+            for row in self.connection.execute(
+                "SELECT cycle_id FROM cycle_tasks WHERE task_id=? AND disconnected_at IS NULL ORDER BY cycle_id",
+                (task_id,),
+            )
+        )
+
+    def replace_task_cycles(self, task_id: int, cycle_ids: tuple[int, ...]) -> None:
+        selected = tuple(dict.fromkeys(cycle_ids))
+        if selected:
+            placeholders = ",".join("?" for _ in selected)
+            self.connection.execute(
+                f"""
+                UPDATE cycle_tasks
+                SET disconnected_at=CURRENT_TIMESTAMP
+                WHERE task_id=? AND disconnected_at IS NULL
+                  AND cycle_id NOT IN ({placeholders})
+                  AND cycle_id IN (SELECT id FROM cycles WHERE status!='archived')
+                """,
+                (task_id, *selected),
+            )
+        else:
+            self.connection.execute(
+                """
+                UPDATE cycle_tasks
+                SET disconnected_at=CURRENT_TIMESTAMP
+                WHERE task_id=? AND disconnected_at IS NULL
+                  AND cycle_id IN (SELECT id FROM cycles WHERE status!='archived')
+                """,
+                (task_id,),
+            )
+        for cycle_id in selected:
+            self.connect_task(cycle_id, task_id)
+
     def create_milestone(self, cycle_id: int, project_id: int, title: str, definition_of_done: str) -> Milestone:
         position = self.connection.execute(
             "SELECT COALESCE(MAX(position)+1,1) FROM milestones WHERE project_id=?", (project_id,)

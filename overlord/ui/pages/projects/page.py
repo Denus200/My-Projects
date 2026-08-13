@@ -10,15 +10,16 @@ from overlord.app.services import ApplicationServices
 from overlord.modules.projects.read_models import ProjectDetail
 from overlord.modules.projects.domain import Project, ProjectStatus
 from overlord.modules.tasks.domain import Task, TaskLifecycle
+from overlord.ui.components.controls import primary_button, search_field, secondary_button, select_field, text_field
 from overlord.ui.components.dialogs import close_dialog, dialog_footer
 from overlord.ui.components.feedback import empty_state, show_success
-from overlord.ui.components.layout import card, page_heading
+from overlord.ui.components.layout import card, page_container
 from overlord.ui.components.status import state_chip
 from overlord.ui.components.tasks import build_quick_task_dialog, task_row
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import StateColors, ThemeTokens
 from overlord.ui.state import AppSessionState, ProjectFilterState
-from overlord.ui.strings import ui_text
+from overlord.ui.strings import format_short_date, ui_error, ui_text
 
 
 def _status_label(status: ProjectStatus) -> str:
@@ -153,8 +154,9 @@ def _new_project_dialog(
     on_created: Callable[[Project], None],
     close: Callable[[], None],
 ) -> ft.AlertDialog:
-    title = ft.TextField(label=ui_text("projects.field_title"), autofocus=True)
-    description = ft.TextField(
+    title = text_field(tokens, label=ui_text("projects.field_title"), autofocus=True)
+    description = text_field(
+        tokens,
         label=ui_text("projects.field_description"),
         multiline=True,
         min_lines=2,
@@ -169,8 +171,9 @@ def _new_project_dialog(
             project = services.projects.create_project.execute(title.value or "", description.value or "")
             on_created(project)
         except Exception as error:
-            text = str(error)
-            if "title" in text.lower():
+            raw = str(error)
+            text = ui_error(error)
+            if "title" in raw.lower():
                 title.error = text
                 title.update()
             else:
@@ -220,8 +223,9 @@ def build_projects(
     state = state or AppSessionState(route=route)
     filter_state = state.project_filters or ProjectFilterState()
     state.project_filters = filter_state
-    search = ft.TextField(label=ui_text("projects.search"), value=filter_state.search, expand=True)
-    status_filter = ft.Dropdown(
+    search = search_field(tokens, label=ui_text("projects.search"), value=filter_state.search, expand=True)
+    status_filter = select_field(
+        tokens,
         label=ui_text("projects.status_filter"),
         value=filter_state.status,
         options=[
@@ -255,7 +259,7 @@ def build_projects(
                 empty_state(
                     ui_text("projects.none_description"),
                     tokens,
-                    ft.Button(ui_text("projects.new_action"), on_click=open_new_project),
+                    primary_button(ui_text("projects.new_action"), tokens, on_click=open_new_project),
                 )
             ]
         result_count.value = ui_text("projects.results_count", count=len(projects))
@@ -267,7 +271,7 @@ def build_projects(
         try:
             render_list(update=True)
         except Exception as error:
-            report_error(str(error))
+            report_error(ui_error(error))
 
     def clear_filters(_event) -> None:
         search.value = ""
@@ -288,28 +292,9 @@ def build_projects(
     search.on_submit = apply_filters
     status_filter.on_select = apply_filters
     render_list()
-    return ft.Column(
+    return page_container(
+        ui_text("projects.title"),
         [
-            page_heading(
-                ui_text("projects.title"),
-                ui_text("projects.subtitle"),
-                tokens,
-                [
-                    ft.Button(
-                        ft.Row(
-                            [
-                                lucide_icon(IconName.PLUS, color=tokens.on_accent, size=tokens.icon_small, label=ui_text("projects.new_action")),
-                                ft.Text(ui_text("projects.new_action"), color=tokens.on_accent),
-                            ],
-                            spacing=tokens.space_2,
-                            tight=True,
-                        ),
-                        bgcolor=tokens.accent_primary,
-                        color=tokens.on_accent,
-                        on_click=open_new_project,
-                    )
-                ],
-            ),
             card(
                 ui_text("projects.browse"),
                 [
@@ -328,9 +313,24 @@ def build_projects(
                 tokens,
             ),
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=ui_text("projects.subtitle"),
+        actions=[
+            primary_button(
+                ft.Row(
+                    [
+                        lucide_icon(IconName.PLUS, color=tokens.on_accent, size=tokens.icon_small, label=ui_text("projects.new_action")),
+                        ft.Text(ui_text("projects.new_action"), color=tokens.on_accent),
+                    ],
+                    spacing=tokens.space_2,
+                    tight=True,
+                ),
+                tokens,
+                on_click=open_new_project,
+            )
+        ],
+        content_spacing=tokens.space_5,
+        page_id="projects",
     )
 
 
@@ -347,16 +347,20 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
         project_id = int(route.rsplit("/", 1)[1])
         detail = services.projects.get_detail.execute(project_id)
     except Exception as error:
-        return ft.Column(
+        return page_container(
+            ui_text("projects.unavailable"),
             [
-                page_heading(ui_text("projects.unavailable"), str(error), tokens),
-                ft.Button(ui_text("projects.back"), on_click=lambda _e: navigate("/projects")),
-            ]
+                secondary_button(ui_text("projects.back"), tokens, on_click=lambda _e: navigate("/projects")),
+            ],
+            tokens,
+            subtitle=ui_error(error),
+            page_id="projects",
         )
     project = detail.project
     all_projects = services.projects.list_projects.execute()
     tasks = services.tasks.list_tasks.execute(project_id=project.id)
-    task_filter = ft.Dropdown(
+    task_filter = select_field(
+        tokens,
         label=ui_text("projects.task_filter"),
         value="open",
         options=[
@@ -374,7 +378,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 services.tasks.complete_task.execute(task_id)
                 refresh()
             except Exception as error:
-                report_error(str(error))
+                report_error(ui_error(error))
 
         return action
 
@@ -387,7 +391,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 empty_state(
                     ui_text("projects.tasks_none"),
                     tokens,
-                    ft.Button(ui_text("projects.quick_task"), on_click=open_quick_task),
+                    primary_button(ui_text("projects.quick_task"), tokens, on_click=open_quick_task),
                 )
             ]
         else:
@@ -410,13 +414,15 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                     quick_created,
                     lambda: close_dialog(page),
                     selected_project_id=project.id,
+                    page=page,
                 )
             )
 
     def open_lifecycle(_event) -> None:
         if page is None:
             return
-        status = ft.Dropdown(
+        status = select_field(
+            tokens,
             label=ui_text("projects.status_filter"),
             value=project.status.value,
             options=[ft.DropdownOption(value.value, _status_label(value)) for value in ProjectStatus],
@@ -430,7 +436,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 show_success(page, tokens, ui_text("projects.updated"))
                 refresh()
             except Exception as error:
-                report_error(str(error))
+                report_error(ui_error(error))
 
         page.show_dialog(
             ft.AlertDialog(
@@ -439,7 +445,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 content=ft.Container(ft.Column([status, message], spacing=tokens.space_3, tight=True), width=420),
                 actions=[
                     ft.TextButton(ui_text("projects.cancel"), on_click=lambda _e: close_dialog(page)),
-                    ft.Button(ui_text("projects.save"), bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=save),
+                    primary_button(ui_text("projects.save"), tokens, on_click=save),
                 ],
                 bgcolor=tokens.surface_elevated,
             )
@@ -454,10 +460,10 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
         ft.Container(
             ft.Column(
                 [
-                    ft.Text(item.blocker.type.value.replace("_", " ").title(), color=tokens.blocker.text, weight=ft.FontWeight.W_600),
+                    ft.Text(ui_text(f"blocker.type.{item.blocker.type.value}"), color=tokens.blocker.text, weight=ft.FontWeight.W_600),
                     ft.Text(item.blocker.description, color=tokens.text_primary),
                     ft.Text(
-                        ui_text("projects.blocker_task", task=item.task_title, date=item.blocker.created_at.strftime("%b %d")),
+                        ui_text("projects.blocker_task", task=item.task_title, date=format_short_date(item.blocker.created_at.date())),
                         color=tokens.text_muted,
                         size=tokens.text_small,
                     ),
@@ -476,7 +482,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
         milestone_controls.extend(
             [
                 ft.Text(
-                    detail.current_milestone.status.value.replace("_", " ").title(),
+                    ui_text(f"cycles.milestone_status.{detail.current_milestone.status.value}"),
                     color=tokens.text_muted,
                     size=tokens.text_small,
                 ),
@@ -486,7 +492,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
         if detail.current_milestone.target_date:
             milestone_controls.append(
                 ft.Text(
-                    ui_text("projects.milestone_target", date=detail.current_milestone.target_date.strftime("%b %d")),
+                    ui_text("projects.milestone_target", date=format_short_date(detail.current_milestone.target_date)),
                     color=tokens.text_muted,
                     size=tokens.text_small,
                 )
@@ -502,18 +508,9 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 on_click=lambda _e: navigate(f"/cycles/{detail.active_cycle.id}"),
             )
         )
-    return ft.Column(
+    return page_container(
+        project.title,
         [
-            page_heading(
-                project.title,
-                project.description or ui_text("projects.detail_subtitle"),
-                tokens,
-                [
-                    state_chip(_status_label(project.status), _status_color(project.status, tokens), tokens),
-                    ft.TextButton(ui_text("projects.more"), on_click=open_lifecycle),
-                    ft.TextButton(ui_text("projects.back"), on_click=lambda _e: navigate("/projects")),
-                ],
-            ),
             ft.ResponsiveRow(
                 [
                     card(ui_text("projects.current_stage"), [ft.Text(project.stage_label or ui_text("projects.no_stage"), color=tokens.text_primary)], tokens, col={"sm": 12, "lg": 4}),
@@ -557,7 +554,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                         [
                             task_filter,
                             ft.Container(expand=True),
-                            ft.Button(
+                            primary_button(
                                 ft.Row(
                                     [
                                         lucide_icon(IconName.PLUS, color=tokens.on_accent, size=tokens.icon_small, label=ui_text("projects.quick_task")),
@@ -566,8 +563,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                                     spacing=tokens.space_2,
                                     tight=True,
                                 ),
-                                bgcolor=tokens.accent_primary,
-                                color=tokens.on_accent,
+                                tokens,
                                 on_click=open_quick_task,
                             ),
                         ],
@@ -578,7 +574,13 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 tokens,
             ),
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=project.description or ui_text("projects.detail_subtitle"),
+        actions=[
+            state_chip(_status_label(project.status), _status_color(project.status, tokens), tokens),
+            ft.TextButton(ui_text("projects.more"), on_click=open_lifecycle),
+            ft.TextButton(ui_text("projects.back"), on_click=lambda _e: navigate("/projects")),
+        ],
+        content_spacing=tokens.space_5,
+        page_id="projects",
     )

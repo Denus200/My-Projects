@@ -3,6 +3,9 @@ Ref/
 ref/
 docs/
 tests/
+!tests/
+tests/*
+!tests/test_localization.py
 scripts/
 
 # Python: виртуальные окружения и кэш
@@ -27,3 +30,12 @@ data/runtime-tmp/  # retired web cache; ignored until Windows releases old locke
 .flet/
 build/
 dist/
+
+# Local / internal docs
+design-qa.md
+PROJECT_CONTEXT.md
+README.md
+
+# Local dependency files
+requirements-dev.txt
+requirements.txt

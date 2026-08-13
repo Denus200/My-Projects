@@ -11,14 +11,15 @@ from overlord.modules.cycles.application import WeeklyOutcomeDraft
 from overlord.modules.cycles.domain import CycleStatus, WeeklyOutcomeStatus, cycle_end_date
 from overlord.modules.projects.domain import ProjectStatus
 from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.ui.components.controls import checkbox, primary_button, search_field, secondary_button, select_field, text_field
 from overlord.ui.components.dialogs import close_dialog, dialog_footer
 from overlord.ui.components.feedback import empty_state, show_success
-from overlord.ui.components.layout import card, page_heading
+from overlord.ui.components.layout import card, page_container
 from overlord.ui.components.status import state_chip
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import StateColors, ThemeTokens
 from overlord.ui.state import AppSessionState, CycleFilterState, CycleWizardState
-from overlord.ui.strings import ui_text
+from overlord.ui.strings import format_date_with_year, format_short_date, ui_error, ui_text
 
 
 def _parse_date(value: str) -> date:
@@ -55,7 +56,7 @@ def _outcome_status_label(status: WeeklyOutcomeStatus) -> str:
 
 
 def _date_range(start: date, end: date) -> str:
-    return f"{start.strftime('%b %d, %Y')} - {end.strftime('%b %d, %Y')}"
+    return ui_text("common.date_range", start=format_date_with_year(start), end=format_date_with_year(end))
 
 
 def _week_dates(start: date, week_number: int) -> tuple[date, date]:
@@ -191,8 +192,9 @@ def build_cycles(
 def _build_list(services, tokens, navigate, report_error, state):
     filter_state = state.cycle_filters or CycleFilterState()
     state.cycle_filters = filter_state
-    search = ft.TextField(label=ui_text("cycles.search"), value=filter_state.search, expand=True)
-    status = ft.Dropdown(
+    search = search_field(tokens, label=ui_text("cycles.search"), value=filter_state.search, expand=True)
+    status = select_field(
+        tokens,
         label=ui_text("cycles.status_filter"),
         value=filter_state.status,
         options=[
@@ -233,7 +235,7 @@ def _build_list(services, tokens, navigate, report_error, state):
                 empty_state(
                     ui_text("cycles.empty_all"),
                     tokens,
-                    ft.Button(ui_text("cycles.create_action"), on_click=lambda _e: navigate("/cycles/new")),
+                    primary_button(ui_text("cycles.create_action"), tokens, on_click=lambda _e: navigate("/cycles/new")),
                 )
             ]
         count.value = ui_text("cycles.results_count", count=len(summaries))
@@ -245,33 +247,14 @@ def _build_list(services, tokens, navigate, report_error, state):
         try:
             render(update=True)
         except Exception as error:
-            report_error(str(error))
+            report_error(ui_error(error))
 
     search.on_submit = apply
     status.on_select = apply
     render()
-    return ft.Column(
+    return page_container(
+        ui_text("cycles.title"),
         [
-            page_heading(
-                ui_text("cycles.title"),
-                ui_text("cycles.subtitle"),
-                tokens,
-                [
-                    ft.Button(
-                        ft.Row(
-                            [
-                                lucide_icon(IconName.PLUS, color=tokens.on_accent, size=tokens.icon_small, label=ui_text("cycles.create_action")),
-                                ft.Text(ui_text("cycles.create_action"), color=tokens.on_accent),
-                            ],
-                            spacing=tokens.space_2,
-                            tight=True,
-                        ),
-                        bgcolor=tokens.accent_primary,
-                        color=tokens.on_accent,
-                        on_click=lambda _e: navigate("/cycles/new"),
-                    )
-                ],
-            ),
             card(
                 ui_text("cycles.browse"),
                 [
@@ -290,9 +273,24 @@ def _build_list(services, tokens, navigate, report_error, state):
                 tokens,
             ),
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=ui_text("cycles.subtitle"),
+        actions=[
+            primary_button(
+                ft.Row(
+                    [
+                        lucide_icon(IconName.PLUS, color=tokens.on_accent, size=tokens.icon_small, label=ui_text("cycles.create_action")),
+                        ft.Text(ui_text("cycles.create_action"), color=tokens.on_accent),
+                    ],
+                    spacing=tokens.space_2,
+                    tight=True,
+                ),
+                tokens,
+                on_click=lambda _e: navigate("/cycles/new"),
+            )
+        ],
+        content_spacing=tokens.space_5,
+        page_id="cycles",
     )
 
 
@@ -345,8 +343,9 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
         nonlocal save_current
         error_text.value = ""
         if wizard.step == 1:
-            title = ft.TextField(label=ui_text("cycles.field_title"), value=wizard.title, autofocus=True)
-            outcome = ft.TextField(
+            title = text_field(tokens, label=ui_text("cycles.field_title"), value=wizard.title, autofocus=True)
+            outcome = text_field(
+                tokens,
                 label=ui_text("cycles.field_main_outcome"),
                 value=wizard.main_outcome,
                 multiline=True,
@@ -375,8 +374,8 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                 ft.Text(ui_text("cycles.main_outcome_help"), color=tokens.text_muted, size=tokens.text_small),
             ]
         elif wizard.step == 2:
-            start = ft.TextField(label=ui_text("cycles.field_start"), value=wizard.start_date)
-            length = ft.TextField(label=ui_text("cycles.field_length"), value=str(wizard.length_weeks), keyboard_type=ft.KeyboardType.NUMBER)
+            start = text_field(tokens, label=ui_text("cycles.field_start"), value=wizard.start_date)
+            length = text_field(tokens, label=ui_text("cycles.field_length"), value=str(wizard.length_weeks), keyboard_type=ft.KeyboardType.NUMBER)
             ends = ft.Text("", color=tokens.text_primary, weight=ft.FontWeight.W_600)
 
             def calculate() -> tuple[date, int]:
@@ -386,7 +385,7 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                 except ValueError as error:
                     raise ValueError(ui_text("cycles.length_error")) from error
                 selected_end = cycle_end_date(selected_start, selected_length)
-                ends.value = ui_text("cycles.ends_value", date=selected_end.strftime("%B %d, %Y"))
+                ends.value = ui_text("cycles.ends_value", date=format_date_with_year(selected_end))
                 return selected_start, selected_length
 
             try:
@@ -412,7 +411,7 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                     wizard.start_date = selected_start.isoformat()
                     wizard.length_weeks = selected_length
                 except ValueError as error:
-                    text = str(error)
+                    text = ui_error(error)
                     if "date" in text.lower():
                         start.error = text
                         start.update()
@@ -435,7 +434,8 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
             ]
         elif wizard.step == 3:
             project_checks = {
-                item.project.id: ft.Checkbox(
+                item.project.id: checkbox(
+                    tokens,
                     label=f"{item.project.title} - {item.project.stage_label or ui_text('cycles.stage_not_set')} - {_project_status_label(item.project.status)}",
                     value=item.project.id in wizard.selected_project_ids,
                 )
@@ -443,7 +443,8 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
             }
             project_titles = {item.project.id: item.project.title for item in options.projects}
             milestone_checks = {
-                item.id: ft.Checkbox(
+                item.id: checkbox(
+                    tokens,
                     label=f"{project_titles.get(item.project_id, ui_text('cycles.unknown_project'))} - {item.title}",
                     value=item.id in wizard.selected_milestone_ids,
                 )
@@ -478,12 +479,14 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
             start_value = _parse_date(wizard.start_date)
             for number in range(1, wizard.length_weeks + 1):
                 week_start, week_end = _week_dates(start_value, number)
-                title_field = ft.TextField(
+                title_field = text_field(
+                    tokens,
                     label=ui_text("cycles.week_outcome"),
                     value=wizard.weekly_titles.get(number, ""),
                     dense=True,
                 )
-                definition_field = ft.TextField(
+                definition_field = text_field(
+                    tokens,
                     label=ui_text("cycles.week_definition"),
                     value=wizard.weekly_definitions.get(number, ""),
                     dense=True,
@@ -498,7 +501,7 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                                     ft.Column(
                                         [
                                             ft.Text(ui_text("cycles.week_number", number=number), color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                                            ft.Text(f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}", color=tokens.text_muted, size=tokens.text_small),
+                                            ft.Text(ui_text("common.date_range", start=format_short_date(week_start), end=format_short_date(week_end)), color=tokens.text_muted, size=tokens.text_small),
                                         ],
                                         spacing=tokens.space_1,
                                     ),
@@ -587,7 +590,7 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                 wizard.step = min(5, wizard.step + 1)
                 render_step(update=True)
             except Exception as error:
-                error_text.value = str(error)
+                error_text.value = ui_error(error)
                 error_text.update()
 
         def create(activate: bool):
@@ -612,7 +615,7 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
                     show_success(page, tokens, ui_text("cycles.created_active" if activate else "cycles.created_draft"))
                     navigate(f"/cycles/{cycle.id}")
                 except Exception as error:
-                    error_text.value = str(error)
+                    error_text.value = ui_error(error)
                     error_text.update()
 
             return action
@@ -621,15 +624,14 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
         if wizard.step > 1:
             actions.append(ft.TextButton(ui_text("cycles.back"), on_click=back))
         if wizard.step < 5:
-            actions.append(ft.Button(ui_text("cycles.continue"), bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=next_step))
+            actions.append(primary_button(ui_text("cycles.continue"), tokens, on_click=next_step))
         else:
             actions.extend(
                 [
                     ft.TextButton(ui_text("cycles.create_draft"), on_click=create(False)),
-                    ft.Button(
+                    primary_button(
                         ui_text("cycles.create_activate"),
-                        bgcolor=tokens.accent_primary,
-                        color=tokens.on_accent,
+                        tokens,
                         on_click=create(True),
                         disabled=options.active_cycle is not None,
                     ),
@@ -648,14 +650,15 @@ def _build_wizard(services, tokens, navigate, report_error, state, page):
             host.update()
 
     render_step()
-    return ft.Column(
+    return page_container(
+        ui_text("cycles.create_title"),
         [
-            page_heading(ui_text("cycles.create_title"), ui_text("cycles.create_subtitle"), tokens),
             host,
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=ui_text("cycles.create_subtitle"),
+        content_spacing=tokens.space_5,
+        page_id="cycles",
     )
 
 
@@ -668,11 +671,14 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
         cycle_id = int(route.rsplit("/", 1)[1])
         detail = services.cycles.get_detail.execute(cycle_id)
     except Exception as error:
-        return ft.Column(
+        return page_container(
+            ui_text("cycles.unavailable"),
             [
-                page_heading(ui_text("cycles.unavailable"), str(error), tokens),
-                ft.Button(ui_text("cycles.all_cycles"), on_click=lambda _e: navigate("/cycles")),
-            ]
+                secondary_button(ui_text("cycles.all_cycles"), tokens, on_click=lambda _e: navigate("/cycles")),
+            ],
+            tokens,
+            subtitle=ui_error(error),
+            page_id="cycles",
         )
     cycle = detail.cycle
     outcomes = {item.week_number: item for item in detail.weekly_outcomes}
@@ -688,15 +694,17 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
             if page is None or cycle.status is CycleStatus.ARCHIVED:
                 return
             item = outcomes.get(number)
-            title = ft.TextField(label=ui_text("cycles.week_outcome"), value=item.title if item else "", autofocus=True)
-            definition = ft.TextField(
+            title = text_field(tokens, label=ui_text("cycles.week_outcome"), value=item.title if item else "", autofocus=True)
+            definition = text_field(
+                tokens,
                 label=ui_text("cycles.week_definition"),
                 value=item.definition_of_done if item else "",
                 multiline=True,
                 min_lines=2,
                 max_lines=4,
             )
-            status = ft.Dropdown(
+            status = select_field(
+                tokens,
                 label=ui_text("cycles.outcome_status"),
                 value=item.status.value if item else WeeklyOutcomeStatus.PLANNED.value,
                 options=[ft.DropdownOption(value.value, _outcome_status_label(value)) for value in WeeklyOutcomeStatus],
@@ -716,7 +724,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                     show_success(page, tokens, ui_text("cycles.week_updated"))
                     refresh()
                 except Exception as error:
-                    message.value = str(error)
+                    message.value = ui_error(error)
                     message.update()
 
             page.show_dialog(
@@ -741,7 +749,8 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
     def open_lifecycle(_event) -> None:
         if page is None:
             return
-        selected = ft.Dropdown(
+        selected = select_field(
+            tokens,
             label=ui_text("cycles.status_filter"),
             value=cycle.status.value,
             options=[ft.DropdownOption(value.value, _status_label(value)) for value in CycleStatus],
@@ -755,7 +764,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 show_success(page, tokens, ui_text("cycles.lifecycle_updated"))
                 refresh()
             except Exception as error:
-                message.value = str(error)
+                message.value = ui_error(error)
                 message.color = tokens.error.text
                 message.update()
 
@@ -785,7 +794,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
             ft.Column(
                 [
                     ft.Text(ui_text("cycles.week_number", number=number), color=tokens.accent_primary if is_current else tokens.text_primary, weight=ft.FontWeight.W_600),
-                    ft.Text(f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}", color=tokens.text_muted, size=tokens.text_small),
+                    ft.Text(ui_text("common.date_range", start=format_short_date(week_start), end=format_short_date(week_end)), color=tokens.text_muted, size=tokens.text_small),
                 ],
                 spacing=tokens.space_1,
                 width=130,
@@ -868,7 +877,7 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
     if current_week:
         week_start, week_end = _week_dates(cycle.start_date, current_week)
         current_controls: list[ft.Control] = [
-            ft.Text(ui_text("cycles.week_dates", number=current_week, start=week_start.strftime("%b %d"), end=week_end.strftime("%b %d")), color=tokens.accent_primary, weight=ft.FontWeight.W_600),
+            ft.Text(ui_text("cycles.week_dates", number=current_week, start=format_short_date(week_start), end=format_short_date(week_end)), color=tokens.accent_primary, weight=ft.FontWeight.W_600),
             ft.Text(current_item.title if current_item else ui_text("cycles.outcome_unplanned"), color=tokens.text_primary),
             ft.Text(
                 _outcome_status_label(current_item.status) if current_item else ui_text("cycles.not_set"),
@@ -905,19 +914,9 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 ),
             ]
         )
-    return ft.Column(
+    return page_container(
+        cycle.title,
         [
-            page_heading(
-                cycle.title,
-                _date_range(cycle.start_date, cycle.end_date)
-                + ((" - " + ui_text("cycles.week_of", week=current_week, length=cycle.length_weeks)) if current_week else ""),
-                tokens,
-                [
-                    state_chip(_status_label(cycle.status), _cycle_status_color(cycle.status, tokens), tokens),
-                    ft.TextButton(ui_text("cycles.more"), on_click=open_lifecycle),
-                    ft.TextButton(ui_text("cycles.all_cycles"), on_click=lambda _e: navigate("/cycles")),
-                ],
-            ),
             card(ui_text("cycles.main_outcome"), [ft.Text(cycle.main_outcome, color=tokens.text_primary, size=tokens.text_emphasis)], tokens),
             ft.ResponsiveRow(
                 [
@@ -945,7 +944,14 @@ def _build_detail(services, tokens, route, navigate, refresh, report_error, page
                 tokens,
             ),
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=_date_range(cycle.start_date, cycle.end_date)
+        + ((" - " + ui_text("cycles.week_of", week=current_week, length=cycle.length_weeks)) if current_week else ""),
+        actions=[
+            state_chip(_status_label(cycle.status), _cycle_status_color(cycle.status, tokens), tokens),
+            ft.TextButton(ui_text("cycles.more"), on_click=open_lifecycle),
+            ft.TextButton(ui_text("cycles.all_cycles"), on_click=lambda _e: navigate("/cycles")),
+        ],
+        content_spacing=tokens.space_5,
+        page_id="cycles",
     )

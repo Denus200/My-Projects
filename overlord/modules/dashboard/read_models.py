@@ -37,8 +37,9 @@ class CurrentCycleReadModel:
 @dataclass(frozen=True, slots=True)
 class DashboardReadModel:
     day: date
-    primary: tuple[TaskListItem, ...]
-    secondary: tuple[TaskListItem, ...]
+    yesterday_tasks: tuple[TaskListItem, ...]
+    today_tasks: tuple[TaskListItem, ...]
+    tomorrow_tasks: tuple[TaskListItem, ...]
     weekly_bars: tuple[WeeklyBar, ...]
     execution_score: float | None
     current_cycle: CurrentCycleReadModel | None

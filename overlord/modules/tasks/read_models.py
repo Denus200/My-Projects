@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from overlord.modules.blockers.domain import Blocker
-from overlord.modules.planning.domain import TaskPlan
 from overlord.modules.tasks.domain import Task
 
 
@@ -20,5 +19,5 @@ class StatusHistoryEntry:
 class TaskEditorData:
     task: Task
     blockers: tuple[Blocker, ...]
-    planning_history: tuple[TaskPlan, ...]
     status_history: tuple[StatusHistoryEntry, ...]
+    connected_cycle_ids: tuple[int, ...] = ()

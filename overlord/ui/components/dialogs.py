@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 import flet as ft
 
+from overlord.ui.components.controls import primary_button, secondary_button
 from overlord.ui.design_system.tokens import ThemeTokens
 
 
@@ -15,12 +16,10 @@ def dialog_footer(
     tokens: ThemeTokens,
 ) -> list[ft.Control]:
     return [
-        ft.TextButton(cancel_label, on_click=on_cancel),
-        ft.Button(
+        secondary_button(cancel_label, tokens, on_click=on_cancel),
+        primary_button(
             primary_label,
-            bgcolor=tokens.accent_primary,
-            color=tokens.on_accent,
-            elevation=0,
+            tokens,
             on_click=on_primary,
         ),
     ]

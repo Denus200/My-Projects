@@ -6,6 +6,7 @@ from datetime import datetime
 
 @dataclass(frozen=True, slots=True)
 class SettingsData:
+    locale: str = "en"
     theme_mode: str = "system"
     motion_enabled: bool = True
     reduced_motion: bool = False

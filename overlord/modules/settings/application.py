@@ -20,6 +20,8 @@ class UpdateSettings:
     uow_factory: UnitOfWorkFactory
 
     def execute(self, **changes: object) -> SettingsData:
+        if "locale" in changes and changes["locale"] not in {"en", "ru"}:
+            raise ValueError("Language must be English or Russian.")
         if "theme_mode" in changes and changes["theme_mode"] not in {"system", "light", "dark"}:
             raise ValueError("Theme mode must be System, Light, or Dark.")
         if "default_cycle_length" in changes and not 1 <= int(changes["default_cycle_length"]) <= 52:

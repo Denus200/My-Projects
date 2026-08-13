@@ -22,7 +22,6 @@ from overlord.modules.cycles.application import (
 )
 from overlord.app.services import ApplicationServices
 from overlord.modules.dashboard.application import GetDashboardQuery
-from overlord.modules.planning.application import DailyPlanningApplication, GetDailyPlanningQuery, SaveDailyPlan
 from overlord.modules.projects.application import (
     ArchiveProject,
     CreateProject,
@@ -34,15 +33,17 @@ from overlord.modules.projects.application import (
 )
 from overlord.modules.settings.application import GetSettingsQuery, SettingsApplication, UpdateSettings
 from overlord.modules.tasks.application import (
-    AssignTaskPlan,
     ChangeTaskLifecycle,
     CompleteTask,
     CreateTask,
     GetTaskEditorQuery,
     ListTasksQuery,
+    MoveTaskToBoardColumn,
     OpenBlocker,
     ResolveBlocker,
+    ReorderTasksForDay,
     TaskApplication,
+    ToggleTaskCompletionForDay,
     UpdateTask,
 )
 from overlord.infrastructure.logging import configure_logging
@@ -78,8 +79,9 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
         ListProjectsQuery(uow), ListProjectSummariesQuery(uow), GetProjectDetailQuery(uow),
     )
     tasks = TaskApplication(
-        CreateTask(uow), UpdateTask(uow), ChangeTaskLifecycle(uow), AssignTaskPlan(uow),
-        CompleteTask(uow), OpenBlocker(uow), ResolveBlocker(uow), ListTasksQuery(uow),
+        CreateTask(uow), UpdateTask(uow), ChangeTaskLifecycle(uow),
+        CompleteTask(uow), ReorderTasksForDay(uow), ToggleTaskCompletionForDay(uow),
+        MoveTaskToBoardColumn(uow), OpenBlocker(uow), ResolveBlocker(uow), ListTasksQuery(uow),
         GetTaskEditorQuery(uow),
     )
     settings = SettingsApplication(GetSettingsQuery(uow), UpdateSettings(uow))
@@ -96,7 +98,6 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
             settings,
             GetDashboardQuery(uow),
             cycles,
-            DailyPlanningApplication(GetDailyPlanningQuery(uow), SaveDailyPlan(uow)),
         ),
         migrations,
     )

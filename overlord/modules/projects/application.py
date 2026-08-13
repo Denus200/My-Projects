@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from overlord.modules.planning.domain import week_start
 from overlord.modules.projects.domain import Project, ProjectStatus, require_project_title
 from overlord.modules.tasks.domain import TaskLifecycle, require_task_title, validate_estimate
 
@@ -30,16 +29,14 @@ class CreateProject:
         with self.uow_factory() as uow:
             project = uow.projects.create(clean_title, description.strip())
             if clean_task:
-                task = uow.tasks.create(
+                chosen_date = first_task_date or date.today()
+                uow.tasks.create(
                     project.id,
                     clean_task,
                     TaskLifecycle.PLANNED,
-                    planned_date=first_task_date or date.today(),
+                    schedule_start_date=chosen_date,
                     estimate_minutes=estimate,
                 )
-                chosen_date = first_task_date or date.today()
-                first_day = 6 if uow.settings.get().first_day_of_week == "sunday" else 0
-                uow.planning.assign_plan(task.id, chosen_date, None, None, week_start(chosen_date, first_day))
             return project
 
 

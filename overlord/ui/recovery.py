@@ -4,6 +4,7 @@ import flet as ft
 
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import ThemeTokens
+from overlord.ui.strings import ui_text
 
 
 def build_recovery_view(
@@ -20,24 +21,24 @@ def build_recovery_view(
                 IconName.ALERT,
                 color=tokens.error.main,
                 size=tokens.icon_display,
-                label="Startup error",
+                label=ui_text("recovery.icon"),
             ),
             ft.Text(
-                "Overlord could not open safely",
+                ui_text("recovery.title"),
                 size=tokens.text_display,
                 color=tokens.text_primary,
                 weight=ft.FontWeight.W_700,
             ),
             ft.Text(
-                "Normal write actions are disabled. The database was not automatically recreated or restored.",
+                ui_text("recovery.description"),
                 color=tokens.text_secondary,
             ),
-            ft.Text(f"Error ID: {error_id}", color=tokens.text_muted),
-            ft.Text(f"Database: {database_path}", color=tokens.text_muted, selectable=True),
-            ft.Text(f"Category: {category}", color=tokens.error.text),
-            ft.Text(f"Error type: {error_type}", color=tokens.text_muted),
+            ft.Text(ui_text("recovery.error_id", error_id=error_id), color=tokens.text_muted),
+            ft.Text(ui_text("recovery.database", database_path=database_path), color=tokens.text_muted, selectable=True),
+            ft.Text(ui_text("recovery.category", category=category), color=tokens.error.text),
+            ft.Text(ui_text("recovery.error_type", error_type=error_type), color=tokens.text_muted),
             ft.Text(
-                "Review data/backups and docs/architecture/DATABASE_RECOVERY.md before restoring anything.",
+                ui_text("recovery.guidance"),
                 color=tokens.text_secondary,
             ),
         ], spacing=tokens.space_4),

@@ -1,0 +1,131 @@
+ .gitignore                                         |   6 [32m+[m[31m-[m
+ AGENTS.md                                          |  23 [32m+[m[31m-[m
+ PROJECT_CONTEXT.md                                 | 123 [32m++++[m
+ README.md                                          |   2 [32m+[m
+ core/__init__.py                                   |   1 [31m-[m
+ core/models.py                                     |  26 [31m-[m
+ core/statuses.py                                   |  18 [31m-[m
+ data/runtime-tmp/tmp_fvf42eh/index.html            | 153 [32m++++[m
+ data/runtime-tmp/tmp_fvf42eh/manifest.json         |  35 [32m+[m
+ data/runtime-tmp/tmpjoeh30uv/index.html            | 153 [32m++++[m
+ data/runtime-tmp/tmpjoeh30uv/manifest.json         |  35 [32m+[m
+ main.py                                            |  83 [32m+[m[31m--[m
+ overlord/app/__init__.py                           |   1 [32m+[m
+ overlord/app/read_models.py                        |  15 [32m+[m
+ overlord/app/services.py                           |  24 [32m+[m
+ overlord/app/unit_of_work.py                       |  25 [32m+[m
+ overlord/application/__init__.py                   |  20 [31m-[m
+ overlord/application/common.py                     | 184 [31m-----[m
+ overlord/bootstrap.py                              |  15 [32m+[m[31m-[m
+ overlord/demo.py                                   |   8 [32m+[m[31m-[m
+ overlord/domain/__init__.py                        |   1 [31m-[m
+ overlord/domain/planning.py                        |  25 [31m-[m
+ overlord/domain/tasks.py                           |  92 [31m---[m
+ overlord/infrastructure/sqlite/repositories.py     | 789 [31m---------------------[m
+ .../infrastructure/sqlite/repositories/__init__.py |  17 [32m+[m
+ .../infrastructure/sqlite/repositories/blockers.py |  36 [32m+[m
+ .../infrastructure/sqlite/repositories/cycles.py   | 208 [32m++++++[m
+ .../sqlite/repositories/dashboard.py               |  43 [32m++[m
+ .../infrastructure/sqlite/repositories/mappers.py  | 145 [32m++++[m
+ .../infrastructure/sqlite/repositories/planning.py |  70 [32m++[m
+ .../infrastructure/sqlite/repositories/projects.py | 136 [32m++++[m
+ .../infrastructure/sqlite/repositories/settings.py |  33 [32m+[m
+ .../infrastructure/sqlite/repositories/tasks.py    | 186 [32m+++++[m
+ overlord/infrastructure/sqlite/unit_of_work.py     |   6 [32m+[m
+ overlord/modules/__init__.py                       |   1 [32m+[m
+ overlord/modules/blockers/__init__.py              |   1 [32m+[m
+ overlord/modules/blockers/domain.py                |  25 [32m+[m
+ overlord/modules/blockers/repository.py            |  11 [32m+[m
+ overlord/modules/cycles/__init__.py                |   1 [32m+[m
+ .../cycles.py => modules/cycles/application.py}    |   7 [32m+[m[31m-[m
+ .../{domain/cycles.py => modules/cycles/domain.py} |   2 [32m+[m
+ overlord/modules/cycles/read_models.py             |  52 [32m++[m
+ overlord/modules/cycles/repository.py              |  28 [32m+[m
+ overlord/modules/dashboard/__init__.py             |   1 [32m+[m
+ .../dashboard/application.py}                      |  67 [32m+[m[31m-[m
+ overlord/modules/dashboard/read_models.py          |  53 [32m++[m
+ overlord/modules/dashboard/repository.py           |   9 [32m+[m
+ overlord/modules/definition_of_done.py             |   5 [32m+[m
+ overlord/modules/planning/__init__.py              |   1 [32m+[m
+ .../planning/application.py}                       |  15 [32m+[m[31m-[m
+ overlord/modules/planning/domain.py                |  36 [32m+[m
+ overlord/modules/planning/repository.py            |  19 [32m+[m
+ overlord/modules/projects/__init__.py              |   1 [32m+[m
+ .../projects/application.py}                       |  10 [32m+[m[31m-[m
+ .../projects.py => modules/projects/domain.py}     |   2 [32m+[m
+ overlord/modules/projects/read_models.py           |  40 [32m++[m
+ overlord/modules/projects/repository.py            |  14 [32m+[m
+ overlord/modules/settings/__init__.py              |   1 [32m+[m
+ .../settings/application.py}                       |   3 [32m+[m[31m-[m
+ overlord/modules/settings/domain.py                |  20 [32m+[m
+ overlord/modules/settings/repository.py            |  10 [32m+[m
+ overlord/modules/tasks/__init__.py                 |   1 [32m+[m
+ .../tasks.py => modules/tasks/application.py}      |  33 [32m+[m[31m-[m
+ overlord/modules/tasks/domain.py                   |  47 [32m++[m
+ overlord/modules/tasks/read_models.py              |  24 [32m+[m
+ overlord/modules/tasks/repository.py               |  16 [32m+[m
+ overlord/presentation/__init__.py                  |   1 [31m-[m
+ overlord/presentation/components/__init__.py       |   1 [31m-[m
+ overlord/presentation/components/common.py         | 234 [31m------[m
+ overlord/presentation/pages/__init__.py            |   1 [31m-[m
+ overlord/ui/__init__.py                            |   1 [32m+[m
+ overlord/{presentation => ui}/app.py               | 252 [32m++[m[31m-----[m
+ overlord/ui/components/__init__.py                 |   1 [32m+[m
+ overlord/ui/components/dialogs.py                  |  31 [32m+[m
+ overlord/ui/components/feedback.py                 |  47 [32m++[m
+ overlord/ui/components/layout.py                   |  47 [32m++[m
+ overlord/ui/components/status.py                   |  15 [32m+[m
+ overlord/ui/components/tasks.py                    | 257 [32m+++++++[m
+ .../{presentation => ui}/design_system/__init__.py |   0
+ .../{presentation => ui}/design_system/assets.py   |   0
+ .../{presentation => ui}/design_system/icons.py    |   0
+ .../{presentation => ui}/design_system/themes.py   |   0
+ .../{presentation => ui}/design_system/tokens.py   |   0
+ overlord/{presentation => ui}/navigation.py        |   2 [32m+[m[31m-[m
+ overlord/ui/pages/__init__.py                      |   1 [32m+[m
+ overlord/ui/pages/cycles/__init__.py               |   1 [32m+[m
+ .../pages/cycles.py => ui/pages/cycles/page.py}    |  33 [32m+[m[31m-[m
+ overlord/ui/pages/dashboard/__init__.py            |   1 [32m+[m
+ .../dashboard.py => ui/pages/dashboard/page.py}    |  18 [32m+[m[31m-[m
+ overlord/ui/pages/planning/__init__.py             |   1 [32m+[m
+ .../pages/planning/page.py}                        |  15 [32m+[m[31m-[m
+ overlord/ui/pages/projects/__init__.py             |   1 [32m+[m
+ .../projects.py => ui/pages/projects/page.py}      |  33 [32m+[m[31m-[m
+ overlord/ui/pages/settings/__init__.py             |   1 [32m+[m
+ .../settings.py => ui/pages/settings/page.py}      |  63 [32m+[m[31m-[m
+ overlord/ui/pages/tasks/__init__.py                |   1 [32m+[m
+ .../pages/tasks.py => ui/pages/tasks/page.py}      | 196 [32m+[m[31m----[m
+ overlord/ui/recovery.py                            |  49 [32m++[m
+ overlord/ui/shell/__init__.py                      |   1 [32m+[m
+ overlord/ui/shell/app_shell.py                     |  83 [32m+++[m
+ overlord/ui/shell/sidebar.py                       | 122 [32m++++[m
+ overlord/{presentation => ui}/state.py             |   0
+ overlord/{presentation => ui}/strings.py           |   0
+ scripts/db_diagnostics.py                          |  49 [31m--[m
+ scripts/migration_smoke_copy.py                    |  89 [31m---[m
+ scripts/seed_demo.py                               |  24 [31m-[m
+ scripts/smoke_environment.py                       |  32 [31m-[m
+ services/__init__.py                               |   1 [31m-[m
+ services/project_service.py                        |  15 [31m-[m
+ services/today_service.py                          |  41 [31m--[m
+ storage/__init__.py                                |   1 [31m-[m
+ storage/database.py                                |  47 [31m--[m
+ storage/repositories/__init__.py                   |   1 [31m-[m
+ storage/repositories/project_repository.py         |  47 [31m--[m
+ storage/repositories/task_repository.py            |  94 [31m---[m
+ tests/test_daily_focus_services.py                 | 108 [31m---[m
+ tests/test_foundation_application.py               | 207 [31m------[m
+ tests/test_foundation_boundaries.py                |  53 [31m--[m
+ tests/test_foundation_migrations.py                | 183 [31m-----[m
+ tests/test_foundation_presentation.py              |  85 [31m---[m
+ tests/test_startup_ui.py                           |  26 [31m-[m
+ tests/test_u1_daily_planning.py                    | 182 [31m-----[m
+ tests/test_u1_runtime.py                           | 227 [31m------[m
+ tests/test_u2_tasks.py                             | 158 [31m-----[m
+ tests/test_u3_projects.py                          | 225 [31m------[m
+ tests/test_u4_cycles.py                            | 325 [31m---------[m
+ tests/test_u5_hardening.py                         | 223 [31m------[m
+ ui/components/sidebar.py                           |  35 [31m-[m
+ ui/style/theme.py                                  |  14 [31m-[m
+ ui/views/home.py                                   | 225 [31m------[m
+ 130 files changed, 2781 insertions(+), 4739 deletions(-)

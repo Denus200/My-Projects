@@ -9,7 +9,6 @@ from .strings import ui_text
 
 class AppRoute(StrEnum):
     DASHBOARD = "/dashboard"
-    DAILY_PLANNING = "/planning/day"
     TASKS = "/tasks"
     PROJECTS = "/projects"
     CYCLES = "/cycles"
@@ -19,24 +18,26 @@ class AppRoute(StrEnum):
 @dataclass(frozen=True, slots=True)
 class NavigationItem:
     route: AppRoute
-    label: str
+    label_key: str
     icon: IconName
+
+    @property
+    def label(self) -> str:
+        return ui_text(self.label_key)
 
 
 NAVIGATION = (
-    NavigationItem(AppRoute.DASHBOARD, ui_text("nav.dashboard"), IconName.DASHBOARD),
-    NavigationItem(AppRoute.TASKS, ui_text("nav.tasks"), IconName.TASKS),
-    NavigationItem(AppRoute.PROJECTS, ui_text("nav.projects"), IconName.PROJECTS),
-    NavigationItem(AppRoute.CYCLES, ui_text("nav.cycles"), IconName.CYCLES),
-    NavigationItem(AppRoute.SETTINGS, ui_text("nav.settings"), IconName.SETTINGS),
+    NavigationItem(AppRoute.DASHBOARD, "nav.dashboard", IconName.DASHBOARD),
+    NavigationItem(AppRoute.TASKS, "nav.tasks", IconName.TASKS),
+    NavigationItem(AppRoute.PROJECTS, "nav.projects", IconName.PROJECTS),
+    NavigationItem(AppRoute.CYCLES, "nav.cycles", IconName.CYCLES),
+    NavigationItem(AppRoute.SETTINGS, "nav.settings", IconName.SETTINGS),
 )
 
 
 def route_family(route: str) -> AppRoute | None:
     if route == AppRoute.DASHBOARD:
         return AppRoute.DASHBOARD
-    if route == AppRoute.DAILY_PLANNING:
-        return AppRoute.DAILY_PLANNING
     if route == AppRoute.TASKS:
         return AppRoute.TASKS
     if route == AppRoute.PROJECTS or route.startswith("/projects/"):

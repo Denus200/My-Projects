@@ -3,11 +3,14 @@ from __future__ import annotations
 import flet as ft
 
 
-def brand_mark(*, color: str, expanded: bool, title_size: int) -> ft.Control:
-    return ft.Text(
-        "Overlord" if expanded else "O",
+def brand_mark(*, color: str, size: int) -> ft.Image:
+    return ft.Image(
+        src="brand/overlord-mark.svg",
+        width=size,
+        height=size,
         color=color,
-        size=title_size,
-        weight=ft.FontWeight.W_700,
+        color_blend_mode=ft.BlendMode.SRC_IN,
+        fit=ft.BoxFit.CONTAIN,
+        anti_alias=True,
         semantics_label="Overlord",
     )

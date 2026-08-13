@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import date
+import re
+
 
 ENGLISH_STRINGS = {
     "app.name": "Overlord",
@@ -10,6 +13,8 @@ ENGLISH_STRINGS = {
     "nav.settings": "Settings",
     "nav.expand_sidebar": "Expand sidebar",
     "nav.collapse_sidebar": "Collapse sidebar",
+    "nav.language": "Language",
+    "nav.language.tooltip": "Switch interface language",
     "common.edit": "Edit",
     "common.edit_named": "Edit {name}",
     "common.complete_task": "Complete task",
@@ -20,6 +25,28 @@ ENGLISH_STRINGS = {
     "common.error": "Error",
     "common.success": "Success",
     "common.try_again": "Try again",
+    "common.not_set": "Not set",
+    "common.not_tracked_yet": "Not tracked yet",
+    "common.minutes_short": "{count} min",
+    "common.date_range": "{start} - {end}",
+    "profile.display_name": "Denys",
+    "profile.menu": "User menu",
+    "lifecycle.backlog": "Backlog",
+    "lifecycle.planned": "Planned",
+    "lifecycle.in_progress": "In progress",
+    "lifecycle.completed": "Completed",
+    "lifecycle.cancelled": "Cancelled",
+    "task_board.planned": "Planned",
+    "task_board.in_progress": "In progress",
+    "task_board.missed": "Not completed",
+    "task_board.completed": "Completed",
+    "task_board.archive": "Archive",
+    "blocker.type.dependency": "Dependency",
+    "blocker.type.decision": "Decision",
+    "blocker.type.resource": "Resource",
+    "blocker.type.clarity": "Clarity",
+    "blocker.type.technical": "Technical",
+    "blocker.type.other": "Other",
     "app.not_found.title": "Page not found",
     "app.not_found.description": "This route is not part of Foundation v0.1.",
     "app.not_found.action": "Go to Dashboard",
@@ -59,9 +86,24 @@ ENGLISH_STRINGS = {
     "settings.save": "Save Settings",
     "settings.saved": "Settings saved.",
     "settings.save_error": "Settings could not be saved. Review the highlighted values and try again.",
+    "settings.validation.language": "Language must be English or Russian.",
+    "settings.validation.theme": "Theme mode must be System, Light, or Dark.",
+    "settings.validation.cycle_length": "Default cycle length must be between 1 and 52 weeks.",
     "dashboard.title": "Dashboard",
+    "dashboard.greeting": "Good morning, {name}",
+    "dashboard.tasks_today.one": "You have 1 task today",
+    "dashboard.tasks_today.other": "You have {count} tasks today",
     "dashboard.plan_day": "Plan the day",
-    "dashboard.today.title": "Today’s Tasks",
+    "dashboard.today.title": "Today",
+    "dashboard.yesterday.title": "Yesterday",
+    "dashboard.tomorrow.title": "Tomorrow",
+    "dashboard.add_task": "Add Task...",
+    "dashboard.add_yesterday_disabled": "Past dates are read-only",
+    "dashboard.empty_day": "No tasks",
+    "dashboard.open_task": "Open details for {name}",
+    "dashboard.toggle_task": "Change completion for {name}",
+    "dashboard.drag_task": "Drag to reorder {name}",
+    "dashboard.today.empty": "No tasks scheduled for today.",
     "dashboard.today.capacity": "3 Primary · 4 Secondary",
     "dashboard.today.empty.title": "Nothing is planned for today.",
     "dashboard.today.empty.description": "Choose existing Tasks and decide what deserves your attention.",
@@ -71,6 +113,23 @@ ENGLISH_STRINGS = {
     "dashboard.cycle.title": "Current Cycle",
     "dashboard.attention.title": "Needs Attention",
     "dashboard.actual_time": "Actual time: {value}",
+    "dashboard.execution_score": "Execution Score",
+    "dashboard.completed_planned": "Completed / planned",
+    "dashboard.current_outcome": "Current Outcome: {value}",
+    "dashboard.next_action": "Next: {value}",
+    "dashboard.week_of": "Week {week} of {length}",
+    "dashboard.days_remaining": "{count} days remaining",
+    "dashboard.next_milestone": "Next milestone: {value}",
+    "dashboard.open_cycle": "Open cycle",
+    "dashboard.no_active_cycle": "No active Cycle yet.",
+    "dashboard.create_plan": "Create a 12-week plan",
+    "dashboard.review": "Review",
+    "dashboard.weekly_tooltip": "{day}: {completed} completed of {planned} planned",
+    "dashboard.reason.open_blocker": "Open blocker",
+    "dashboard.reason.carried_over": "Carried over {count} times",
+    "dashboard.reason.no_update": "No update for seven days",
+    "dashboard.reason.primary_next_action": "Primary task needs a next action",
+    "dashboard.reason.legacy_status": "Legacy status requires review",
     "planning.title": "Daily Planning",
     "planning.subtitle": "Choose existing Tasks and shape a realistic day.",
     "planning.date": "Plan date",
@@ -94,8 +153,29 @@ ENGLISH_STRINGS = {
     "planning.cancel": "Cancel",
     "planning.no_candidates": "No Tasks match these filters.",
     "planning.empty_group": "No Tasks assigned yet.",
+    "planning.date_error": "Plan date must use YYYY-MM-DD.",
+    "planning.capacity_full": "{group} capacity is already full.",
+    "planning.definition_required": "Definition of Done is required before assigning a Primary Task.",
+    "planning.today_plan": "Today's Plan",
     "tasks.title": "Tasks",
     "tasks.subtitle": "Browse your work, capture something quickly, and add detail only when it helps.",
+    "tasks.workspace_subtitle": "Plan every Task here. Dashboard shows today's honest slice.",
+    "tasks.new": "New Task",
+    "tasks.view.kanban": "Kanban",
+    "tasks.view.week": "Week",
+    "tasks.view.month": "Month",
+    "tasks.add_planned": "Add without date",
+    "tasks.add_today": "Add for today",
+    "tasks.column_empty": "No Tasks in this column.",
+    "tasks.drag_task": "Drag to move this Task",
+    "tasks.drag_column": "Drag to reorder this column",
+    "tasks.moved": "Task moved.",
+    "tasks.add_to_date": "Add Task to {date}",
+    "tasks.day_empty": "No Tasks",
+    "tasks.previous": "Previous",
+    "tasks.today": "Today",
+    "tasks.next": "Next",
+    "tasks.calendar.week_title": "{start} - {end}",
     "tasks.quick_action": "Quick Task",
     "tasks.results": "Task results",
     "tasks.results_count": "{count} Tasks",
@@ -122,14 +202,53 @@ ENGLISH_STRINGS = {
     "tasks.apply_filters": "Apply filters",
     "tasks.reset_filters": "Reset filters",
     "tasks.empty": "No Tasks match these filters.",
-    "tasks.quick_title": "Quick Task",
-    "tasks.quick_description": "Capture the Task now. Planning it for Today happens separately.",
+    "tasks.quick_title": "Create Task",
+    "tasks.quick_description": "Capture the Task now. Configure it later if necessary.",
+    "tasks.details_title": "Task Details",
+    "tasks.completion_state": "Completed",
+    "tasks.create_title": "Create Task",
+    "tasks.when": "When",
+    "tasks.when.today": "Today",
+    "tasks.when.tomorrow": "Tomorrow",
+    "tasks.when.this_week": "This week",
+    "tasks.when.no_date": "No date",
+    "tasks.when.choose_date": "Choose date",
+    "tasks.custom_date": "Date",
+    "tasks.date_hint": "DD.MM.YYYY",
+    "tasks.human_date_error": "Date must use DD.MM.YYYY.",
+    "tasks.open_calendar": "Open calendar",
+    "tasks.choose_date": "Choose date",
+    "tasks.advanced_options": "+ Advanced options",
+    "tasks.hide_advanced_options": "− Advanced options",
+    "tasks.time": "Time",
+    "tasks.not_set": "Not set",
+    "tasks.set_time": "Set time",
+    "tasks.choose_time": "Choose time",
+    "tasks.deadline": "Deadline",
+    "tasks.set_deadline": "Set deadline",
+    "tasks.deadline_date": "Deadline date",
+    "tasks.estimate.15": "15 min",
+    "tasks.estimate.30": "30 min",
+    "tasks.estimate.60": "1 hour",
+    "tasks.estimate.custom": "Custom",
+    "tasks.estimate_custom": "Custom estimate (minutes)",
+    "tasks.priority": "Priority",
+    "tasks.schedule_section": "Schedule",
+    "tasks.details_section": "Details",
+    "tasks.connections_section": "Connections",
+    "tasks.no_cycles": "No 12-week Cycles are available.",
+    "tasks.until_time": "until {time}",
     "tasks.field_title": "Title",
     "tasks.field_description": "Description",
     "tasks.field_project": "Project (optional)",
     "tasks.more_details": "More details",
     "tasks.fewer_details": "Fewer details",
     "tasks.field_planned_date": "Planned date (optional)",
+    "tasks.field_start_date": "Start date (optional)",
+    "tasks.field_start_time": "Start time",
+    "tasks.field_end_date": "End date (optional)",
+    "tasks.field_end_time": "End time",
+    "tasks.field_deadline": "Deadline (optional)",
     "tasks.field_estimate": "Estimate (minutes)",
     "tasks.field_definition": "Definition of Done",
     "tasks.field_next_action": "Next action",
@@ -160,7 +279,11 @@ ENGLISH_STRINGS = {
     "tasks.plan_original": "original",
     "tasks.status_unset": "unset",
     "tasks.no_reason": "No reason",
+    "tasks.reason.changed_editor": "Changed in Task editor",
+    "tasks.reason.completed": "Completed",
     "tasks.date_error": "Date must use YYYY-MM-DD.",
+    "tasks.time_error": "Time must use HH:MM.",
+    "tasks.datetime_error": "Deadline must use YYYY-MM-DD HH:MM.",
     "tasks.estimate_integer_error": "Estimate must be a whole number of minutes.",
     "projects.title": "Projects",
     "projects.subtitle": "Browse outcomes, see what is moving, and open the work that needs attention.",
@@ -338,9 +461,164 @@ ENGLISH_STRINGS = {
     "cycles.task_context_note": "Tasks remain canonical Tasks; this is compact Cycle context, not another Tasks page.",
     "cycles.no_tasks": "No Tasks connected to this Cycle.",
     "cycles.more": "More",
+    "recovery.page_title": "Overlord — Recovery",
+    "recovery.icon": "Startup error",
+    "recovery.title": "Overlord could not open safely",
+    "recovery.description": "Normal write actions are disabled. The database was not automatically recreated or restored.",
+    "recovery.error_id": "Error ID: {error_id}",
+    "recovery.database": "Database: {database_path}",
+    "recovery.category": "Category: {category}",
+    "recovery.error_type": "Error type: {error_type}",
+    "recovery.guidance": "Review data/backups and docs/architecture/DATABASE_RECOVERY.md before restoring anything.",
+    "recovery.category.migration": "Migration or schema error",
+    "recovery.category.integrity": "Database integrity error",
+    "recovery.category.lock": "Database lock error",
+    "recovery.category.permission": "Database permission error",
+    "recovery.category.unexpected": "Unexpected startup error",
+    "error.task_title_required": "Task title is required.",
+    "error.project_title_required": "Project title is required.",
+    "error.blocker_description_required": "Blocker description is required.",
+    "error.blocker_resolution_required": "Blocker resolution is required.",
+    "error.estimate_positive": "Estimate must be a positive number of minutes.",
+    "error.task_missing": "Task {id} does not exist.",
+    "error.project_missing": "Project {id} does not exist.",
+    "error.blocker_missing": "Open Blocker {id} does not exist.",
+    "error.cycle_missing": "Cycle {id} does not exist.",
+    "error.slot_occupied": "That planning slot is already occupied.",
+    "error.created_project_missing": "Created Project could not be loaded.",
+    "error.created_task_missing": "Created Task could not be loaded.",
+    "error.settings_missing": "Settings row is missing.",
+    "error.week_repeated": "Week {number} is repeated.",
+    "error.active_cycle_draft": "{title} is already active. Create this Cycle as Draft instead.",
+    "error.active_cycle_replace": "{title} is already active. Complete or archive it before activating another Cycle.",
+    "error.selected_projects_missing": "One or more selected Projects no longer exist.",
+    "error.selected_milestones_missing": "One or more selected Milestones no longer exist.",
+    "error.milestone_project_required": "A selected Milestone requires its Project to be connected.",
+    "error.cycle_project_missing": "Cycle or Project does not exist.",
+    "error.cycle_task_missing": "Cycle or Task does not exist.",
+    "error.archived_cycle_read_only": "Archived Cycles are read-only until restored.",
+    "error.missed_derived": "Not completed is automatic. Set an expired end time or deadline in the Task window.",
+    "error.cycle_length": "Cycle length must be between 1 and 52 weeks.",
+    "error.field_required": "This field is required.",
+    "error.week_number_range": "Week number must be between 1 and {length}.",
+    "error.definition_required": "Definition of Done is required before this action.",
+    "error.primary_capacity": "A daily plan can contain at most 3 Primary Tasks.",
+    "error.secondary_capacity": "A daily plan can contain at most 4 Secondary Tasks.",
+    "error.daily_duplicate": "A Task can appear only once in a daily plan.",
+    "error.plan_group_position": "Today group and position must be provided together.",
+    "error.primary_position": "Primary position must be from 1 to 3.",
+    "error.secondary_position": "Secondary position must be from 1 to 4.",
 }
 
 
+from overlord.ui.locales import MONTH_NAMES, RUSSIAN_STRINGS, SHORT_MONTHS, WEEKDAY_INITIALS, WEEKDAY_NAMES
+
+
+SUPPORTED_LOCALES = ("en", "ru")
+_CURRENT_LOCALE = "en"
+CATALOGS = {"en": ENGLISH_STRINGS, "ru": RUSSIAN_STRINGS}
+
+
+def set_locale(locale: str) -> None:
+    global _CURRENT_LOCALE
+    if locale not in SUPPORTED_LOCALES:
+        raise ValueError(ENGLISH_STRINGS["settings.validation.language"])
+    _CURRENT_LOCALE = locale
+
+
+def get_locale() -> str:
+    return _CURRENT_LOCALE
+
+
 def ui_text(key: str, **values: object) -> str:
-    template = ENGLISH_STRINGS[key]
+    template = CATALOGS[get_locale()][key]
     return template.format(**values) if values else template
+
+
+def format_short_date(value: date) -> str:
+    if get_locale() == "ru":
+        return f"{value.day} {SHORT_MONTHS['ru'][value.month - 1]}"
+    return f"{SHORT_MONTHS['en'][value.month - 1]} {value.day:02d}"
+
+
+def format_dashboard_date(value: date) -> str:
+    month = SHORT_MONTHS[get_locale()][value.month - 1]
+    if get_locale() == "ru":
+        return f"{value.day} {month}."
+    suffix = "th" if 10 < value.day % 100 < 14 else {1: "st", 2: "nd", 3: "rd"}.get(value.day % 10, "th")
+    return f"{value.day}{suffix} {month}."
+
+
+def format_long_date(value: date) -> str:
+    locale = get_locale()
+    if locale == "ru":
+        return f"{WEEKDAY_NAMES['ru'][value.weekday()]}, {value.day} {MONTH_NAMES['ru'][value.month - 1]}"
+    return f"{WEEKDAY_NAMES['en'][value.weekday()]}, {MONTH_NAMES['en'][value.month - 1]} {value.day:02d}"
+
+
+def format_date_with_year(value: date) -> str:
+    if get_locale() == "ru":
+        return f"{value.day} {SHORT_MONTHS['ru'][value.month - 1]} {value.year}"
+    return f"{SHORT_MONTHS['en'][value.month - 1]} {value.day:02d}, {value.year}"
+
+
+def format_weekday_initial(value: date) -> str:
+    return WEEKDAY_INITIALS[get_locale()][value.weekday()]
+
+
+def format_weekday_name(value: date) -> str:
+    return WEEKDAY_NAMES[get_locale()][value.weekday()]
+
+
+def format_month_year(value: date) -> str:
+    return f"{MONTH_NAMES[get_locale()][value.month - 1]} {value.year}"
+
+
+_ERROR_PATTERNS = (
+    (re.compile(r"^Task title is required\.$"), "error.task_title_required", ()),
+    (re.compile(r"^Project title is required\.$"), "error.project_title_required", ()),
+    (re.compile(r"^Blocker description is required\.$"), "error.blocker_description_required", ()),
+    (re.compile(r"^Blocker resolution is required\.$"), "error.blocker_resolution_required", ()),
+    (re.compile(r"^Estimate must be a positive number of minutes\.$"), "error.estimate_positive", ()),
+    (re.compile(r"^Default cycle length must be between 1 and 52 weeks\.$"), "settings.validation.cycle_length", ()),
+    (re.compile(r"^Theme mode must be System, Light, or Dark\.$"), "settings.validation.theme", ()),
+    (re.compile(r"^Language must be English or Russian\.$"), "settings.validation.language", ()),
+    (re.compile(r"^Task (\d+) does not exist\.$"), "error.task_missing", ("id",)),
+    (re.compile(r"^Project (\d+) does not exist\.$"), "error.project_missing", ("id",)),
+    (re.compile(r"^Open Blocker (\d+) does not exist\.$"), "error.blocker_missing", ("id",)),
+    (re.compile(r"^Cycle (\d+) does not exist\.$"), "error.cycle_missing", ("id",)),
+    (re.compile(r"^That planning slot is already occupied\.$"), "error.slot_occupied", ()),
+    (re.compile(r"^Created Project could not be loaded\.$"), "error.created_project_missing", ()),
+    (re.compile(r"^Created Task could not be loaded\.$"), "error.created_task_missing", ()),
+    (re.compile(r"^Settings row is missing\.$"), "error.settings_missing", ()),
+    (re.compile(r"^Week (\d+) is repeated\.$"), "error.week_repeated", ("number",)),
+    (re.compile(r'^"(.+)" is already active\. Create this Cycle as Draft instead\.$'), "error.active_cycle_draft", ("title",)),
+    (re.compile(r'^"(.+)" is already active\. Complete or archive it before activating another Cycle\.$'), "error.active_cycle_replace", ("title",)),
+    (re.compile(r"^One or more selected Projects no longer exist\.$"), "error.selected_projects_missing", ()),
+    (re.compile(r"^One or more selected Milestones no longer exist\.$"), "error.selected_milestones_missing", ()),
+    (re.compile(r"^A selected Milestone requires its Project to be connected\.$"), "error.milestone_project_required", ()),
+    (re.compile(r"^Cycle or Project does not exist\.$"), "error.cycle_project_missing", ()),
+    (re.compile(r"^Cycle or Task does not exist\.$"), "error.cycle_task_missing", ()),
+    (re.compile(r"^Archived Cycles are read-only until restored\.$"), "error.archived_cycle_read_only", ()),
+    (re.compile(r"^Not completed is derived from an expired end time or deadline\.$"), "error.missed_derived", ()),
+    (re.compile(r"^Cycle length must be between 1 and 52 weeks\.$"), "error.cycle_length", ()),
+    (re.compile(r"^.+ is required\.$"), "error.field_required", ()),
+    (re.compile(r"^Week number must be between 1 and (\d+)\.$"), "error.week_number_range", ("length",)),
+    (re.compile(r"^Definition of Done is required before .+\.$"), "error.definition_required", ()),
+    (re.compile(r"^A daily plan can contain at most 3 Primary Tasks\.$"), "error.primary_capacity", ()),
+    (re.compile(r"^A daily plan can contain at most 4 Secondary Tasks\.$"), "error.secondary_capacity", ()),
+    (re.compile(r"^A Task can appear only once in a daily plan\.$"), "error.daily_duplicate", ()),
+    (re.compile(r"^Today group and position must be provided together\.$"), "error.plan_group_position", ()),
+    (re.compile(r"^Primary position must be from 1 to 3\.$"), "error.primary_position", ()),
+    (re.compile(r"^Secondary position must be from 1 to 4\.$"), "error.secondary_position", ()),
+)
+
+
+def ui_error(error: Exception | str) -> str:
+    message = str(error)
+    for pattern, key, names in _ERROR_PATTERNS:
+        match = pattern.fullmatch(message)
+        if match:
+            values = dict(zip(names, match.groups(), strict=True))
+            return ui_text(key, **values)
+    return message

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from overlord.modules.blockers.domain import Blocker, BlockerType
 from overlord.modules.cycles.domain import (
@@ -12,7 +12,6 @@ from overlord.modules.cycles.domain import (
     WeeklyOutcome,
     WeeklyOutcomeStatus,
 )
-from overlord.modules.planning.domain import TaskPlan, TodayGroup
 from overlord.modules.projects.domain import Project, ProjectStatus
 from overlord.modules.tasks.domain import Task, TaskLifecycle
 
@@ -23,6 +22,10 @@ def _datetime(value: str | None) -> datetime | None:
 
 def _date(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
+
+
+def _time(value: str | None) -> time | None:
+    return time.fromisoformat(value) if value else None
 
 
 def _boolean(value: int | None) -> bool | None:
@@ -58,32 +61,17 @@ def _task(row: sqlite3.Row) -> Task:
         importance=_boolean(row["importance"]),
         urgency=_boolean(row["urgency"]),
         estimate_minutes=row["planned_minutes"],
+        schedule_start_date=_date(row["schedule_start_date"]),
+        schedule_start_time=_time(row["schedule_start_time"]),
+        schedule_end_date=_date(row["schedule_end_date"]),
+        schedule_end_time=_time(row["schedule_end_time"]),
+        deadline_at=_datetime(row["deadline_at"]),
         started_at=_datetime(row["started_at"]),
         completed_at=_datetime(row["completed_at"]),
         archived_at=_datetime(row["archived_at"]),
         milestone_id=row["milestone_id"],
         created_at=_datetime(row["created_at"]),
         updated_at=_datetime(row["updated_at"]),
-    )
-
-
-def _plan(row: sqlite3.Row | None, prefix: str = "") -> TaskPlan | None:
-    if row is None or row[f"{prefix}plan_id"] is None:
-        return None
-    task_key = f"{prefix}task_id"
-    if task_key not in row.keys() and not prefix and "plan_task_id" in row.keys():
-        task_key = "plan_task_id"
-    group = row[f"{prefix}today_group"]
-    return TaskPlan(
-        id=row[f"{prefix}plan_id"],
-        task_id=row[task_key],
-        planned_date=_date(row[f"{prefix}planned_date"]),
-        planned_week_start=_date(row[f"{prefix}planned_week_start"]),
-        today_group=TodayGroup(group) if group else None,
-        position=row[f"{prefix}position"],
-        supersedes_plan_id=row[f"{prefix}supersedes_plan_id"],
-        created_at=_datetime(row[f"{prefix}plan_created_at"]),
-        ended_at=_datetime(row[f"{prefix}ended_at"]),
     )
 
 

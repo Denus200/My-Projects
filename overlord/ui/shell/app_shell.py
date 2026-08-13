@@ -18,6 +18,7 @@ class AppShell:
         sidebar_collapsed: bool,
         on_navigate: Callable[[str], None],
         on_toggle_sidebar: Callable[[object], None],
+        on_toggle_language: Callable[[object], None] | None = None,
     ) -> None:
         self.sidebar = Sidebar(
             tokens,
@@ -25,35 +26,44 @@ class AppShell:
             sidebar_collapsed,
             on_navigate,
             on_toggle_sidebar,
+            on_toggle_language,
         )
-        self.banner_host = ft.Column(spacing=tokens.space_3)
+        self.banner_host = ft.Column(spacing=tokens.space_3, visible=False)
         self.loading_indicator = ft.ProgressBar(
             color=tokens.accent_primary,
             bgcolor=tokens.border_default,
             visible=False,
         )
         self.content_host = ft.Container(expand=True)
-        body = ft.Container(
+        self._tokens = tokens
+        self.body = ft.Container(
             ft.Column(
                 [self.banner_host, self.loading_indicator, self.content_host],
-                spacing=tokens.space_4,
+                spacing=tokens.space_0,
                 expand=True,
             ),
             padding=tokens.space_6,
             expand=True,
         )
-        self.control = ft.Row([self.sidebar.control, body], spacing=tokens.space_0, expand=True)
+        self.control = ft.Row([self.sidebar.control, self.body], spacing=tokens.space_0, expand=True)
 
     def set_content(self, content: ft.Control) -> None:
         self.content_host.content = content
+        data = getattr(content, "data", None)
+        if isinstance(data, dict) and data.get("layout") == "global-page":
+            self.body.padding = self._tokens.space_0
+        else:
+            self.body.padding = self._tokens.space_6
 
     def set_loading_visible(self, visible: bool) -> None:
         self.loading_indicator.visible = visible
 
     def clear_banner(self) -> None:
         self.banner_host.controls = []
+        self.banner_host.visible = False
 
     def show_error(self, tokens: ThemeTokens, message: str, on_dismiss: Callable[[], None]) -> None:
+        self.banner_host.visible = True
         self.banner_host.controls = [
             ft.Container(
                 ft.Row([
@@ -68,6 +78,7 @@ class AppShell:
         ]
 
     def show_notice(self, tokens: ThemeTokens, message: str, on_dismiss: Callable[[], None]) -> None:
+        self.banner_host.visible = True
         self.banner_host.controls = [
             ft.Container(
                 ft.Row([

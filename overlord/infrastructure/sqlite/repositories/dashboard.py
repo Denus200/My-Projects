@@ -11,14 +11,14 @@ class SqliteDashboardRepository:
     def weekly_counts(self, start: date) -> list[tuple[date, int, int]]:
         end = start + timedelta(days=6)
         rows = {
-            row["planned_date"]: (row["planned"], row["completed"])
+            row["schedule_start_date"]: (row["planned"], row["completed"])
             for row in self.connection.execute(
                 """
-                SELECT tp.planned_date, COUNT(DISTINCT tp.task_id) AS planned,
-                       COUNT(DISTINCT CASE WHEN t.lifecycle_status='completed' THEN tp.task_id END) AS completed
-                FROM task_plans tp JOIN tasks t ON t.id=tp.task_id
-                WHERE tp.planned_date BETWEEN ? AND ?
-                GROUP BY tp.planned_date
+                SELECT schedule_start_date, COUNT(*) AS planned,
+                       COUNT(CASE WHEN lifecycle_status='completed' THEN 1 END) AS completed
+                FROM tasks
+                WHERE schedule_start_date BETWEEN ? AND ?
+                GROUP BY schedule_start_date
                 """,
                 (start.isoformat(), end.isoformat()),
             )
@@ -29,14 +29,10 @@ class SqliteDashboardRepository:
         end = start + timedelta(days=6)
         row = self.connection.execute(
             """
-            WITH original AS (
-              SELECT task_id, planned_week_start, ROW_NUMBER() OVER (PARTITION BY task_id ORDER BY created_at,id) AS n
-              FROM task_plans
-            )
             SELECT COUNT(*) AS planned,
-                   COALESCE(SUM(CASE WHEN t.lifecycle_status='completed' THEN 1 ELSE 0 END),0) AS completed
-            FROM original o JOIN tasks t ON t.id=o.task_id
-            WHERE o.n=1 AND o.planned_week_start BETWEEN ? AND ?
+                   COALESCE(SUM(CASE WHEN lifecycle_status='completed' THEN 1 ELSE 0 END),0) AS completed
+            FROM tasks
+            WHERE schedule_start_date BETWEEN ? AND ?
             """,
             (start.isoformat(), end.isoformat()),
         ).fetchone()

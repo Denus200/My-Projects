@@ -5,9 +5,11 @@ from collections.abc import Callable
 import flet as ft
 
 from overlord.app.services import ApplicationServices
+from overlord.ui.components.controls import primary_button, select_field, selection_button, text_field
 from overlord.ui.state import AppSessionState
-from overlord.ui.strings import ui_text
-from overlord.ui.components.layout import page_heading
+from overlord.ui.strings import ui_error, ui_text
+from overlord.ui.components.layout import page_container
+from overlord.ui.design_system.styles import selection_button_style
 from overlord.ui.design_system.tokens import ThemeTokens
 
 
@@ -75,27 +77,23 @@ def build_settings(
     draft_theme = {"value": settings.theme_mode}
     motion = ft.Switch(value=settings.motion_enabled, tooltip=ui_text("settings.motion"))
     reduced = ft.Switch(value=settings.reduced_motion, tooltip=ui_text("settings.reduced_motion"))
-    first_day = ft.Dropdown(
+    first_day = select_field(
+        tokens,
+        compact=True,
         value=settings.first_day_of_week,
         options=[
             ft.DropdownOption("monday", ui_text("settings.first_day.monday")),
             ft.DropdownOption("sunday", ui_text("settings.first_day.sunday")),
         ],
         width=220,
-        dense=True,
-        border_color=tokens.border_default,
-        focused_border_color=tokens.accent_primary,
-        focused_border_width=tokens.focus_width,
         tooltip=ui_text("settings.first_day"),
     )
-    cycle_length = ft.TextField(
+    cycle_length = text_field(
+        tokens,
+        compact=True,
         value=str(settings.default_cycle_length),
         keyboard_type=ft.KeyboardType.NUMBER,
         width=120,
-        dense=True,
-        border_color=tokens.border_default,
-        focused_border_color=tokens.accent_primary,
-        focused_border_width=tokens.focus_width,
         tooltip=ui_text("settings.cycle_length"),
     )
     cycle_length_control = ft.Row(
@@ -103,7 +101,9 @@ def build_settings(
         spacing=tokens.space_2,
         tight=True,
     )
-    startup = ft.Dropdown(
+    startup = select_field(
+        tokens,
+        compact=True,
         value=settings.startup_destination,
         options=[
             ft.DropdownOption("dashboard", ui_text("nav.dashboard")),
@@ -112,10 +112,6 @@ def build_settings(
             ft.DropdownOption("cycles", ui_text("nav.cycles")),
         ],
         width=240,
-        dense=True,
-        border_color=tokens.border_default,
-        focused_border_color=tokens.accent_primary,
-        focused_border_width=tokens.focus_width,
         tooltip=ui_text("settings.startup_destination"),
     )
     sidebar = ft.Switch(value=settings.sidebar_collapsed, tooltip=ui_text("settings.sidebar_collapsed"))
@@ -128,19 +124,17 @@ def build_settings(
             draft_theme["value"] = value
             for theme_value, button in theme_buttons.items():
                 selected = theme_value == value
-                button.bgcolor = tokens.accent_primary if selected else tokens.surface_inner
-                button.color = tokens.on_accent if selected else tokens.text_primary
+                button.style = selection_button_style(tokens, selected=selected)
                 _safe_update(button)
 
         return choose
 
     for value in ("system", "light", "dark"):
         selected = settings.theme_mode == value
-        theme_buttons[value] = ft.Button(
+        theme_buttons[value] = selection_button(
             ui_text(f"settings.theme.{value}"),
-            bgcolor=tokens.accent_primary if selected else tokens.surface_inner,
-            color=tokens.on_accent if selected else tokens.text_primary,
-            elevation=0,
+            tokens,
+            selected=selected,
             tooltip=ui_text(f"settings.theme.{value}"),
             data=f"settings-theme-{value}",
             on_click=choose_theme(value),
@@ -209,14 +203,12 @@ def build_settings(
     }
     content_host = ft.Container(content=builders[session.settings_category](), expand=True)
     category_buttons: dict[str, ft.Button] = {}
-    category_selector = ft.Dropdown(
+    category_selector = select_field(
+        tokens,
+        compact=True,
         label=ui_text("settings.category"),
         value=session.settings_category,
         options=[ft.DropdownOption(value, ui_text(f"settings.category.{value}")) for value in _CATEGORIES],
-        dense=True,
-        border_color=tokens.border_default,
-        focused_border_color=tokens.accent_primary,
-        focused_border_width=tokens.focus_width,
         width=320,
     )
 
@@ -226,8 +218,7 @@ def build_settings(
         content_host.content = builders[session.settings_category]()
         for category, button in category_buttons.items():
             selected = category == session.settings_category
-            button.bgcolor = tokens.soft_red_background if selected else tokens.surface_card
-            button.color = tokens.text_primary if selected else tokens.text_secondary
+            button.style = selection_button_style(tokens, selected=selected)
             _safe_update(button)
         _safe_update(category_selector)
         _safe_update(content_host)
@@ -235,11 +226,10 @@ def build_settings(
     category_selector.on_select = lambda event: select_category(event.control.value or "appearance")
     for category in _CATEGORIES:
         selected = category == session.settings_category
-        category_buttons[category] = ft.Button(
+        category_buttons[category] = selection_button(
             ui_text(f"settings.category.{category}"),
-            bgcolor=tokens.soft_red_background if selected else tokens.surface_card,
-            color=tokens.text_primary if selected else tokens.text_secondary,
-            elevation=0,
+            tokens,
+            selected=selected,
             width=190,
             data=f"settings-category-{category}",
             on_click=lambda _event, value=category: select_category(value),
@@ -264,10 +254,11 @@ def build_settings(
             )
             apply_settings(updated, ui_text("settings.saved"))
         except ValueError as error:
-            message.value = str(error)
+            raw = str(error)
+            message.value = ui_error(error)
             message.color = tokens.error.text
-            if "cycle length" in str(error).lower() or "integer" in str(error).lower():
-                cycle_length.error = str(error)
+            if "cycle length" in raw.lower() or "integer" in raw.lower():
+                cycle_length.error = ui_error(error)
                 _safe_update(cycle_length)
             _safe_update(message)
             save_button.disabled = False
@@ -277,11 +268,9 @@ def build_settings(
             save_button.disabled = False
             _safe_update(save_button)
 
-    save_button = ft.Button(
+    save_button = primary_button(
         ui_text("settings.save"),
-        bgcolor=tokens.accent_primary,
-        color=tokens.on_accent,
-        elevation=0,
+        tokens,
         on_click=save,
     )
 
@@ -311,14 +300,15 @@ def build_settings(
         spacing=tokens.space_5,
         vertical_alignment=ft.CrossAxisAlignment.START,
     )
-    return ft.Column(
+    return page_container(
+        ui_text("settings.title"),
         [
-            page_heading(ui_text("settings.title"), ui_text("settings.subtitle"), tokens),
             ft.Container(settings_layout, width=1000 if not narrow else None),
         ],
-        spacing=tokens.space_5,
-        scroll=ft.ScrollMode.AUTO,
-        expand=True,
+        tokens,
+        subtitle=ui_text("settings.subtitle"),
+        content_spacing=tokens.space_5,
+        page_id="settings",
     )
 
 

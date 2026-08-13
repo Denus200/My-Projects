@@ -5,7 +5,6 @@ from typing import ContextManager, Protocol
 from overlord.modules.blockers.repository import BlockerRepositoryPort
 from overlord.modules.cycles.repository import CycleRepositoryPort
 from overlord.modules.dashboard.repository import DashboardRepositoryPort
-from overlord.modules.planning.repository import PlanningRepositoryPort
 from overlord.modules.projects.repository import ProjectRepositoryPort
 from overlord.modules.settings.repository import SettingsRepositoryPort
 from overlord.modules.tasks.repository import TaskRepositoryPort
@@ -14,7 +13,6 @@ from overlord.modules.tasks.repository import TaskRepositoryPort
 class UnitOfWork(Protocol):
     projects: ProjectRepositoryPort
     tasks: TaskRepositoryPort
-    planning: PlanningRepositoryPort
     blockers: BlockerRepositoryPort
     cycles: CycleRepositoryPort
     settings: SettingsRepositoryPort

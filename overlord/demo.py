@@ -11,13 +11,12 @@ from time import perf_counter
 from overlord.bootstrap import DEFAULT_DATABASE_PATH, REPOSITORY_ROOT, bootstrap
 from overlord.modules.blockers.domain import BlockerType
 from overlord.modules.cycles.domain import CycleStatus, WeeklyOutcomeStatus
-from overlord.modules.planning.domain import TodayGroup
 from overlord.modules.projects.domain import ProjectStatus
 from overlord.modules.tasks.domain import TaskLifecycle
 
 
 DEMO_DATABASE_PATH = REPOSITORY_ROOT / "data" / "demo" / "overlord_demo.db"
-DEMO_SEED_VERSION = 4
+DEMO_SEED_VERSION = 5
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,8 +24,7 @@ class DemoSeedSummary:
     database_path: Path
     project_count: int
     task_count: int
-    primary_count: int
-    secondary_count: int
+    scheduled_today_count: int
     cycle_title: str
     seed_action: str = "reused"
     completed_at: datetime | None = None
@@ -86,8 +84,7 @@ def _reusable_seed_summary(database_path: Path, selected_day: date) -> DemoSeedS
             valid = (
                 summary.project_count == 7
                 and summary.task_count == 22
-                and summary.primary_count == 3
-                and summary.secondary_count == 4
+                and summary.scheduled_today_count == 7
                 and summary.cycle_title == "Career Launch — Cycle 2"
             )
             if valid:
@@ -105,8 +102,7 @@ def _reusable_seed_summary(database_path: Path, selected_day: date) -> DemoSeedS
             summary.database_path,
             summary.project_count,
             summary.task_count,
-            summary.primary_count,
-            summary.secondary_count,
+            summary.scheduled_today_count,
             summary.cycle_title,
             "reused",
             completed_at,
@@ -255,8 +251,7 @@ def seed_demo_database(
         title: str,
         planned_date: date,
         *,
-        group: TodayGroup | None = None,
-        position: int | None = None,
+        description: str = "",
         definition_of_done: str | None = None,
         next_action: str | None = None,
         importance: bool | None = None,
@@ -268,9 +263,8 @@ def seed_demo_database(
         task = services.tasks.create_task.execute(
             projects[project_title].id,
             title,
-            planned_date=planned_date,
-            today_group=group,
-            position=position,
+            description=description,
+            schedule_start_date=planned_date,
             definition_of_done=definition_of_done,
             next_action=next_action,
             importance=importance,
@@ -290,8 +284,7 @@ def seed_demo_database(
         "Portfolio Refresh",
         "Finalize Viora evidence section",
         selected_day,
-        group=TodayGroup.PRIMARY,
-        position=1,
+        description="Add the verified conversion metric and source note.",
         definition_of_done="Evidence, metric source, and conclusion are complete and ready for review.",
         next_action="Insert the verified conversion metric and source note.",
         importance=True,
@@ -309,8 +302,7 @@ def seed_demo_database(
         "Confident English",
         "Record English project explanation",
         selected_day,
-        group=TodayGroup.PRIMARY,
-        position=2,
+        description="Record one uninterrupted five-minute explanation.",
         definition_of_done="A five-minute explanation is recorded and one improvement note is captured.",
         next_action="Open the Viora case study and record the first uninterrupted take.",
         importance=True,
@@ -322,19 +314,18 @@ def seed_demo_database(
         "Overlord",
         "Review Overlord Dashboard",
         selected_day,
-        group=TodayGroup.PRIMARY,
-        position=3,
+        description="Check hierarchy, density, and the three-day task board.",
         definition_of_done="Populated and empty Dashboard states are reviewed at the supported widths.",
-        next_action="Check hierarchy, density, and the Daily Planning entry point.",
+        next_action="Check hierarchy, density, and the date-driven task list.",
         importance=True,
         urgency=True,
         estimate=30,
     )
 
-    create_task("Overlord", "Save Dashboard references", selected_day, group=TodayGroup.SECONDARY, position=1, next_action="Save the approved Bento and task-row references.", estimate=10)
-    create_task("Portfolio Refresh", "Reply to a recruiter", selected_day, group=TodayGroup.SECONDARY, position=2, next_action="Confirm availability for a short call.", urgency=True, estimate=15)
-    create_task("Portfolio Refresh", "Update LinkedIn headline", selected_day, group=TodayGroup.SECONDARY, position=3, next_action="Draft one outcome-focused headline.", importance=True, estimate=15, connect_to_cycle=True)
-    create_task("Home", "Replace cat litter", selected_day, group=TodayGroup.SECONDARY, position=4, definition_of_done="Litter is replaced and the area is cleaned.", estimate=10, lifecycle=TaskLifecycle.COMPLETED)
+    create_task("Overlord", "Save Dashboard references", selected_day, next_action="Save the approved Bento and task-row references.", estimate=10)
+    create_task("Portfolio Refresh", "Reply to a recruiter", selected_day, next_action="Confirm availability for a short call.", urgency=True, estimate=15)
+    create_task("Portfolio Refresh", "Update LinkedIn headline", selected_day, next_action="Draft one outcome-focused headline.", importance=True, estimate=15, connect_to_cycle=True)
+    create_task("Home", "Replace cat litter", selected_day, definition_of_done="Litter is replaced and the area is cleaned.", estimate=10, lifecycle=TaskLifecycle.COMPLETED)
 
     standalone = services.tasks.create_task.execute(
         None,
@@ -353,8 +344,7 @@ def seed_demo_database(
         next_action="Reduce the draft to three evidence-backed paragraphs.",
         estimate=35,
     )
-    services.tasks.assign_plan.execute(carried.id, week_start - timedelta(weeks=1))
-    services.tasks.assign_plan.execute(carried.id, selected_day - timedelta(days=1))
+    services.tasks.update_task.execute(carried.id, schedule_start_date=selected_day - timedelta(days=1))
 
     stale = create_task(
         "Confident English",
@@ -371,8 +361,6 @@ def seed_demo_database(
         "Overlord",
         "Review application tracking checklist",
         selected_day - timedelta(days=1),
-        group=TodayGroup.PRIMARY,
-        position=1,
         definition_of_done="The checklist has one clear owner and completion criterion per step.",
         importance=True,
         lifecycle=TaskLifecycle.IN_PROGRESS,
@@ -416,8 +404,8 @@ def seed_demo_database(
             """,
             (
                 projects["Overlord"].id,
-                "Dashboard and Daily Planning approved",
-                "The U1 workflow is approved after populated and empty-state review.",
+                "Dashboard task flow approved",
+                "The date-driven Dashboard flow is approved after populated and empty-state review.",
                 "in_progress",
             ),
         )
@@ -438,8 +426,7 @@ def seed_demo_database(
         summary.database_path,
         summary.project_count,
         summary.task_count,
-        summary.primary_count,
-        summary.secondary_count,
+        summary.scheduled_today_count,
         summary.cycle_title,
         "reset",
         completed_at,
@@ -461,18 +448,14 @@ def demo_seed_summary(
     try:
         project_count = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
         task_count = connection.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
-        primary_count = connection.execute(
-            "SELECT COUNT(*) FROM task_plans WHERE ended_at IS NULL AND today_group='primary' AND planned_date=?",
-            (selected_day.isoformat(),),
-        ).fetchone()[0]
-        secondary_count = connection.execute(
-            "SELECT COUNT(*) FROM task_plans WHERE ended_at IS NULL AND today_group='secondary' AND planned_date=?",
-            (selected_day.isoformat(),),
+        scheduled_today_count = connection.execute(
+            "SELECT COUNT(*) FROM tasks WHERE schedule_start_date <= ? AND COALESCE(schedule_end_date,schedule_start_date) >= ?",
+            (selected_day.isoformat(), selected_day.isoformat()),
         ).fetchone()[0]
         cycle_title = connection.execute("SELECT title FROM cycles WHERE status='active'").fetchone()[0]
     finally:
         connection.close()
-    return DemoSeedSummary(target, project_count, task_count, primary_count, secondary_count, cycle_title)
+    return DemoSeedSummary(target, project_count, task_count, scheduled_today_count, cycle_title)
 
 
 def demo_seed_fingerprint(database_path: str | Path = DEMO_DATABASE_PATH) -> str:
@@ -483,7 +466,8 @@ def demo_seed_fingerprint(database_path: str | Path = DEMO_DATABASE_PATH) -> str
         (
             "tasks",
             """SELECT id,project_id,title,lifecycle_status,definition_of_done,next_action,
-                      importance,urgency,planned_minutes
+                      importance,urgency,planned_minutes,schedule_start_date,schedule_start_time,
+                      schedule_end_date,schedule_end_time,deadline_at
                FROM tasks ORDER BY id""",
         ),
         (

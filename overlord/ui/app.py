@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlparse
 import flet as ft
 
 from overlord.app.services import ApplicationServices
+from overlord.ui.components.controls import primary_button, secondary_button
 from overlord.ui.design_system.themes import build_dark_theme, build_light_theme, flet_theme_mode
 from overlord.ui.design_system.tokens import ThemeTokens, resolve_tokens
 from overlord.ui.navigation import AppRoute, route_family
@@ -19,11 +20,10 @@ from overlord.ui.recovery import build_recovery_view
 from overlord.ui.pages.cycles.page import build_cycles
 from overlord.ui.pages.projects.page import build_projects
 from overlord.ui.pages.dashboard.page import build_dashboard
-from overlord.ui.pages.planning.page import build_daily_planning
 from overlord.ui.pages.settings.page import build_settings
 from overlord.ui.pages.tasks.page import build_tasks
 from overlord.ui.state import AppSessionState
-from overlord.ui.strings import ui_text
+from overlord.ui.strings import set_locale, ui_error, ui_text
 from overlord.ui.shell.app_shell import AppShell
 
 
@@ -54,8 +54,12 @@ class OverlordApp:
         self.loading_delay_seconds = loading_delay_seconds
         self.logger = logging.getLogger("overlord.navigation")
         settings = services.settings.get_settings.execute()
+        set_locale(settings.locale)
         self.state = AppSessionState(
+            locale=settings.locale,
             theme_mode=settings.theme_mode,
+            motion_enabled=settings.motion_enabled,
+            reduced_motion=settings.reduced_motion,
             sidebar_collapsed=settings.sidebar_collapsed,
         )
         initial = f"/{settings.startup_destination}"
@@ -78,8 +82,8 @@ class OverlordApp:
             return
         self.page.title = ui_text("app.name")
         self.page.padding = 0
-        self.page.theme = build_light_theme()
-        self.page.dark_theme = build_dark_theme()
+        self.page.theme = build_light_theme(motion_enabled=self.state.effective_motion)
+        self.page.dark_theme = build_dark_theme(motion_enabled=self.state.effective_motion)
         tokens = self._tokens()
         self._apply_page_theme(tokens)
 
@@ -89,6 +93,7 @@ class OverlordApp:
             self.state.sidebar_collapsed,
             self.navigate,
             self.toggle_sidebar,
+            self.toggle_language,
         )
         self.page.add(self._shell.control)
         self._mounted = True
@@ -264,14 +269,21 @@ class OverlordApp:
 
     def apply_settings(self, settings, notice_message: str | None = None) -> None:
         sidebar_changed = self.state.sidebar_collapsed != settings.sidebar_collapsed
+        locale_changed = self.state.locale != settings.locale
+        self.state.locale = settings.locale
+        set_locale(settings.locale)
         self.state.theme_mode = settings.theme_mode
+        self.state.motion_enabled = settings.motion_enabled
+        self.state.reduced_motion = settings.reduced_motion
         self.state.sidebar_collapsed = settings.sidebar_collapsed
         self.state.error_message = None
         self.state.notice_message = notice_message
         tokens = self._tokens()
+        self.page.theme = build_light_theme(motion_enabled=self.state.effective_motion)
+        self.page.dark_theme = build_dark_theme(motion_enabled=self.state.effective_motion)
         self._apply_page_theme(tokens)
         if self._shell is not None:
-            if sidebar_changed:
+            if sidebar_changed or locale_changed:
                 self._shell.sidebar.rebuild(tokens, self.state.route, self.state.sidebar_collapsed)
             else:
                 self._shell.sidebar.update_selection(tokens, self.state.route)
@@ -287,7 +299,21 @@ class OverlordApp:
                 self._shell.sidebar.rebuild(self._tokens(), self.state.route, self.state.sidebar_collapsed)
             self.page.update()
         except Exception as error:
-            self.report_error(str(error))
+            self.report_error(ui_error(error))
+
+    def toggle_language(self, event) -> None:
+        try:
+            requested = "ru" if bool(getattr(event.control, "value", False)) else "en"
+            updated = self.services.settings.update_settings.execute(locale=requested)
+            self.state.locale = updated.locale
+            set_locale(updated.locale)
+            self.state.error_message = None
+            self.state.notice_message = None
+            if self._shell is not None:
+                self._shell.sidebar.rebuild(self._tokens(), self.state.route, self.state.sidebar_collapsed)
+            self.render()
+        except Exception as error:
+            self.report_error(ui_error(error))
 
     def render(self) -> None:
         if not self._mounted:
@@ -395,14 +421,20 @@ class OverlordApp:
         return ft.Column([
             ft.Text(ui_text("app.not_found.title"), size=tokens.text_display, color=tokens.text_primary, weight=ft.FontWeight.W_700),
             ft.Text(ui_text("app.not_found.description"), color=tokens.text_secondary),
-            ft.Button(ui_text("app.not_found.action"), bgcolor=tokens.accent_primary, color=tokens.on_accent, on_click=lambda _e: self.navigate(AppRoute.DASHBOARD.value)),
+            primary_button(ui_text("app.not_found.action"), tokens, on_click=lambda _e: self.navigate(AppRoute.DASHBOARD.value)),
         ], spacing=tokens.space_4)
 
     def _page_content(self, tokens: ThemeTokens, path: str, family: AppRoute | None) -> ft.Control:
         if family is AppRoute.DASHBOARD:
-            return build_dashboard(self.services, tokens, self.state.route, self.navigate, self.render, self.report_error)
-        if family is AppRoute.DAILY_PLANNING:
-            return build_daily_planning(self.services, tokens, self.state.route, self.navigate, self.report_error)
+            return build_dashboard(
+                self.services,
+                tokens,
+                self.state.route,
+                self.navigate,
+                self.render,
+                self.report_error,
+                self.page,
+            )
         if family is AppRoute.TASKS:
             return build_tasks(self.services, tokens, self.state, self.render, self.report_error, self.page)
         if family is AppRoute.PROJECTS:
@@ -454,7 +486,7 @@ class OverlordApp:
             ft.Text(ui_text("app.route_error.title"), size=tokens.text_title, color=tokens.error.text, weight=ft.FontWeight.W_600),
             ft.Text(ui_text("app.route_error.description"), color=tokens.text_secondary),
             ft.Text(ui_text("app.route_error.id", error_id=error_id), color=tokens.text_muted, size=tokens.text_small),
-            ft.Button(ui_text("common.try_again"), on_click=lambda _e: self.render()),
+            secondary_button(ui_text("common.try_again"), tokens, on_click=lambda _e: self.render()),
         ], spacing=tokens.space_3)
 
     def _refresh_banner(self, tokens: ThemeTokens) -> None:
@@ -488,21 +520,21 @@ def show_recovery(page: ft.Page, error: Exception, database_path: Path) -> None:
         "startup_failed error_id=%s error_class=%s", correlation_id, error.__class__.__name__
     )
     tokens = resolve_tokens("light")
-    page.title = "Overlord — Recovery"
+    page.title = ui_text("recovery.page_title")
     page.bgcolor = tokens.app_background
     page.theme = build_light_theme()
     page.dark_theme = build_dark_theme()
     error_message = str(error).lower()
     if "checksum" in error_message or "migration" in error_message or "schema" in error_message:
-        category = "Migration or schema error"
+        category = ui_text("recovery.category.migration")
     elif "corrupt" in error_message or "malformed" in error_message or "integrity" in error_message:
-        category = "Database integrity error"
+        category = ui_text("recovery.category.integrity")
     elif "locked" in error_message or "busy" in error_message:
-        category = "Database lock error"
+        category = ui_text("recovery.category.lock")
     elif error.__class__.__name__ in {"PermissionError", "PermissionDenied"} or "permission" in error_message or "readonly" in error_message:
-        category = "Database permission error"
+        category = ui_text("recovery.category.permission")
     else:
-        category = "Unexpected startup error"
+        category = ui_text("recovery.category.unexpected")
     page.add(build_recovery_view(
         tokens,
         error_id=correlation_id,

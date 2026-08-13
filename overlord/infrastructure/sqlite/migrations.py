@@ -463,6 +463,73 @@ def _migration_0006(connection: sqlite3.Connection) -> None:
     connection.execute("CREATE INDEX idx_tasks_milestone_lifecycle ON tasks(milestone_id, lifecycle_status)")
 
 
+def _migration_0007(connection: sqlite3.Connection) -> None:
+    _add_column(
+        connection,
+        "settings",
+        "locale TEXT NOT NULL DEFAULT 'en' CHECK (locale IN ('en','ru'))",
+    )
+
+
+def _migration_0008(connection: sqlite3.Connection) -> None:
+    """Make Task scheduling date-driven and preserve legacy slot history.
+
+    ``task_plans`` remains immutable historical evidence, but current product
+    behavior reads the canonical schedule directly from ``tasks``.
+    """
+    for definition in (
+        "schedule_start_date TEXT",
+        "schedule_start_time TEXT",
+        "schedule_end_date TEXT",
+        "schedule_end_time TEXT",
+        "deadline_at TEXT",
+    ):
+        _add_column(connection, "tasks", definition)
+    connection.execute(
+        """
+        UPDATE tasks
+        SET schedule_start_date = (
+            SELECT planned_date
+            FROM task_plans
+            WHERE task_plans.task_id = tasks.id AND task_plans.ended_at IS NULL
+        )
+        WHERE schedule_start_date IS NULL
+          AND EXISTS (
+              SELECT 1 FROM task_plans
+              WHERE task_plans.task_id = tasks.id AND task_plans.ended_at IS NULL
+          )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_tasks_schedule_start ON tasks(schedule_start_date, lifecycle_status)"
+    )
+    connection.execute(
+        "CREATE INDEX idx_tasks_schedule_end ON tasks(schedule_end_date, lifecycle_status)"
+    )
+    connection.execute(
+        "CREATE INDEX idx_tasks_deadline ON tasks(deadline_at, lifecycle_status)"
+    )
+
+
+def _migration_0009(connection: sqlite3.Connection) -> None:
+    """Persist explicit task ordering independently for each scheduled day."""
+    connection.execute(
+        """
+        CREATE TABLE task_day_positions (
+            task_id INTEGER NOT NULL,
+            day TEXT NOT NULL,
+            position INTEGER NOT NULL CHECK (position >= 0),
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (day, task_id),
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_task_day_positions_order ON task_day_positions(day, position)"
+    )
+
+
 MIGRATIONS = (
     Migration(1, "baseline", "legacy-project-task-schema-v1", _migration_0001),
     Migration(2, "settings", "typed-singleton-settings-v1", _migration_0002),
@@ -475,6 +542,19 @@ MIGRATIONS = (
         "nullable-task-project-preserve-all-records-v1",
         _migration_0006,
         requires_foreign_keys_off=True,
+    ),
+    Migration(7, "interface_locale", "persistent-en-ru-interface-locale-v1", _migration_0007),
+    Migration(
+        8,
+        "date_driven_tasks",
+        "canonical-task-schedule-preserve-legacy-plans-v1",
+        _migration_0008,
+    ),
+    Migration(
+        9,
+        "task_day_ordering",
+        "persistent-task-position-per-scheduled-day-v1",
+        _migration_0009,
     ),
 )
 

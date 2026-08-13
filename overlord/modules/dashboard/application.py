@@ -11,10 +11,14 @@ from overlord.modules.dashboard.read_models import (
     WeeklyBar,
     execution_score,
 )
-from overlord.modules.planning.domain import TodayGroup, week_start
 from overlord.app.read_models import TaskListItem
 from overlord.app.unit_of_work import UnitOfWorkFactory
-from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.modules.tasks.application import order_tasks_for_day
+from overlord.modules.tasks.domain import TaskLifecycle, is_scheduled_for_day
+
+
+def _week_start(value: date, first_day: int = 0) -> date:
+    return value.fromordinal(value.toordinal() - ((value.weekday() - first_day) % 7))
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,13 +30,27 @@ class GetDashboardQuery:
         now = datetime.now()
         with self.uow_factory(read_only=True) as uow:
             settings = uow.settings.get()
-            start = week_start(selected_day, 6 if settings.first_day_of_week == "sunday" else 0)
-            today = uow.tasks.list(planned_date=selected_day)
-            primary = tuple(item for item in today if item.current_plan and item.current_plan.today_group is TodayGroup.PRIMARY)
-            secondary = tuple(item for item in today if item.current_plan and item.current_plan.today_group is TodayGroup.SECONDARY)
+            start = _week_start(selected_day, 6 if settings.first_day_of_week == "sunday" else 0)
+            all_tasks = uow.tasks.list()
+            selected_days = (
+                selected_day - timedelta(days=1),
+                selected_day,
+                selected_day + timedelta(days=1),
+            )
+            day_tasks = tuple(
+                order_tasks_for_day(
+                    tuple(
+                        item
+                        for item in all_tasks
+                        if item.task.lifecycle_status is not TaskLifecycle.CANCELLED
+                        and is_scheduled_for_day(item.task, current_day)
+                    ),
+                    uow.tasks.day_positions(current_day),
+                )
+                for current_day in selected_days
+            )
             weekly_bars = tuple(WeeklyBar(*values) for values in uow.dashboard.weekly_counts(start))
             originally_planned, completed = uow.dashboard.execution_counts(start)
-            all_tasks = uow.tasks.list()
             attention: list[AttentionItem] = []
             for item in all_tasks:
                 task = item.task
@@ -41,17 +59,8 @@ class GetDashboardQuery:
                 reasons: list[str] = []
                 if item.open_blockers:
                     reasons.append("Open blocker")
-                if item.carry_over_count >= 2:
-                    reasons.append(f"Carried over {item.carry_over_count} times")
                 if task.lifecycle_status is TaskLifecycle.IN_PROGRESS and task.updated_at <= now - timedelta(days=7):
                     reasons.append("No update for seven days")
-                if (
-                    item.current_plan
-                    and item.current_plan.today_group is TodayGroup.PRIMARY
-                    and task.lifecycle_status is TaskLifecycle.IN_PROGRESS
-                    and not task.next_action
-                ):
-                    reasons.append("Primary task needs a next action")
                 if task.lifecycle_status is None:
                     reasons.append("Legacy status requires review")
                 if reasons:
@@ -81,12 +90,13 @@ class GetDashboardQuery:
                     max(0, (cycle.end_date - selected_day).days),
                 )
         return DashboardReadModel(
-            selected_day,
-            primary,
-            secondary,
-            weekly_bars,
-            execution_score(originally_planned, completed),
-            cycle_model,
-            tuple(attention),
+            day=selected_day,
+            yesterday_tasks=day_tasks[0],
+            today_tasks=day_tasks[1],
+            tomorrow_tasks=day_tasks[2],
+            weekly_bars=weekly_bars,
+            execution_score=execution_score(originally_planned, completed),
+            current_cycle=cycle_model,
+            attention=tuple(attention),
             outcome_label=outcome_label,
         )
