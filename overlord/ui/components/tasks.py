@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
-import re
 
 import flet as ft
 
@@ -10,63 +9,19 @@ from overlord.app.read_models import TaskListItem
 from overlord.app.services import ApplicationServices
 from overlord.modules.projects.domain import Project
 from overlord.modules.tasks.domain import Task, TaskBoardColumn, TaskLifecycle, board_column
+from overlord.modules.validation import FieldValidationError
 from overlord.ui.components.controls import choice_chip, primary_button, secondary_button, select_field, tertiary_button, text_field
 from overlord.ui.components.status import state_chip
+from overlord.ui.components.task_form_values import (
+    display_date,
+    flexible_date_value,
+    project_id,
+    project_options,
+    time_value,
+)
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import ThemeTokens
 from overlord.ui.strings import format_short_date, ui_error, ui_text
-
-
-def _date_value(value: str) -> date:
-    try:
-        return date.fromisoformat(value.strip())
-    except ValueError as error:
-        raise ValueError(ui_text("tasks.date_error")) from error
-
-
-def _time_value(value: str) -> time:
-    try:
-        return time.fromisoformat(value.strip())
-    except ValueError as error:
-        raise ValueError(ui_text("tasks.time_error")) from error
-
-
-def _datetime_value(value: str) -> datetime:
-    try:
-        return datetime.fromisoformat(value.strip().replace(" ", "T"))
-    except ValueError as error:
-        raise ValueError(ui_text("tasks.datetime_error")) from error
-
-
-def _display_date(value: date) -> str:
-    return value.strftime("%d.%m.%Y")
-
-
-def _flexible_date_value(value: str) -> date:
-    clean = value.strip()
-    digits = re.sub(r"\D", "", clean)
-    try:
-        if len(digits) == 8 and clean == digits:
-            return date(int(digits[4:]), int(digits[2:4]), int(digits[:2]))
-        for separator in (".", "/", "-"):
-            parts = clean.split(separator)
-            if len(parts) == 3 and len(parts[0]) <= 2:
-                return date(int(parts[2]), int(parts[1]), int(parts[0]))
-        return date.fromisoformat(clean)
-    except (ValueError, TypeError) as error:
-        raise ValueError(ui_text("tasks.human_date_error")) from error
-
-
-def _project_options(projects: tuple[Project, ...]) -> list[ft.DropdownOption]:
-    return [
-        ft.DropdownOption("none", ui_text("tasks.no_project")),
-        *[ft.DropdownOption(str(item.id), item.title) for item in projects],
-    ]
-
-
-def _project_id(value: str | None) -> int | None:
-    return None if value in {None, "none"} else int(value)
-
 
 def build_quick_task_dialog(
     services: ApplicationServices,
@@ -106,7 +61,7 @@ def build_quick_task_dialog(
         tokens,
         label=ui_text("tasks.field_project"),
         value=str(selected_project_id) if selected_project_id is not None else "none",
-        options=_project_options(projects),
+        options=project_options(projects),
     )
     when = select_field(
         tokens,
@@ -123,7 +78,7 @@ def build_quick_task_dialog(
     custom_date = text_field(
         tokens,
         label=ui_text("tasks.custom_date"),
-        value=_display_date(preset_start_date) if initial_when == "choose_date" and preset_start_date else "",
+        value=display_date(preset_start_date) if initial_when == "choose_date" and preset_start_date else "",
         hint_text=ui_text("tasks.date_hint"),
         expand=True,
     )
@@ -230,7 +185,7 @@ def build_quick_task_dialog(
         if isinstance(value, datetime):
             value = value.date()
         if isinstance(value, date):
-            field.value = _display_date(value)
+            field.value = display_date(value)
             field.error = None
             field.update()
 
@@ -239,7 +194,7 @@ def build_quick_task_dialog(
         if not raw:
             return
         try:
-            field.value = _display_date(_flexible_date_value(raw))
+            field.value = display_date(flexible_date_value(raw, field="date"))
             field.error = None
             field.update()
         except ValueError:
@@ -354,21 +309,21 @@ def build_quick_task_dialog(
             elif when.value == "no_date":
                 chosen_start, chosen_end = None, None
             else:
-                chosen_start = _flexible_date_value(custom_date.value or "")
+                chosen_start = flexible_date_value(custom_date.value or "", field="start_date")
                 chosen_end = None
 
             chosen_time = (
-                _time_value(start_time.value or "")
+                time_value(start_time.value or "", field="start_time")
                 if time_mode.value == "custom" and (start_time.value or "").strip()
                 else None
             )
             if deadline_mode.value == "custom":
                 try:
                     chosen_deadline = datetime.combine(
-                        _flexible_date_value(deadline_date.value or ""),
+                        flexible_date_value(deadline_date.value or "", field="deadline"),
                         time.max,
                     )
-                except ValueError:
+                except FieldValidationError:
                     deadline_date.error = ui_text("tasks.human_date_error")
                     deadline_date.update()
                     return
@@ -378,14 +333,18 @@ def build_quick_task_dialog(
                 try:
                     minutes = int(custom_estimate.value or "")
                 except ValueError as error:
-                    raise ValueError(ui_text("tasks.estimate_integer_error")) from error
+                    raise FieldValidationError(
+                        "estimate",
+                        "integer",
+                        ui_text("tasks.estimate_integer_error"),
+                    ) from error
             elif estimate_mode.value == "none":
                 minutes = None
             else:
                 minutes = int(estimate_mode.value)
 
             task = services.tasks.create_task.execute(
-                _project_id(project.value),
+                project_id(project.value),
                 title.value or "",
                 description=description.value or "",
                 schedule_start_date=chosen_start,
@@ -396,28 +355,29 @@ def build_quick_task_dialog(
                 urgency=True if urgency.selected else None,
                 estimate_minutes=minutes,
             )
-            on_created(task)
         except Exception as error:
-            raw = str(error).lower()
             text = ui_error(error)
-            if "title" in raw:
+            field = error.field if isinstance(error, FieldValidationError) else None
+            if field == "title":
                 title.error = text
                 title.update()
-            elif "estimate" in raw:
+            elif field == "estimate":
                 custom_estimate.error = text
                 custom_estimate.update()
-            elif "time" in raw:
+            elif field in {"start_time", "end_time"}:
                 start_time.error = text
                 start_time.update()
-            elif "deadline" in raw:
+            elif field == "deadline":
                 deadline_date.error = text
                 deadline_date.update()
-            elif "date" in raw:
+            elif field in {"start_date", "end_date", "date"}:
                 custom_date.error = text
                 custom_date.update()
             else:
                 message.value = text
                 message.update()
+        else:
+            on_created(task)
 
     create_button.on_click = create
     title.on_change = update_create_enabled

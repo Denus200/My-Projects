@@ -12,7 +12,8 @@ from overlord.modules.tasks.domain import TaskLifecycle
 from overlord.ui.components.controls import primary_button
 from overlord.ui.components.feedback import empty_state
 from overlord.ui.components.layout import card, page_container
-from overlord.ui.components.reorder import reorderable_task_handle
+from overlord.ui.components.reorder import drag_payload, draggable_task_handle
+from overlord.ui.components.task_ordering import TaskOrderController
 from overlord.ui.components.task_details import build_task_details_dialog
 from overlord.ui.components.tasks import build_quick_task_dialog
 from overlord.ui.design_system.icons import IconName, lucide_icon
@@ -129,10 +130,25 @@ def _dashboard_task_card(
         opacity=text_opacity,
         data={"role": "task-body", "task_id": task.id},
     )
-    drag_handle = reorderable_task_handle(
+    drag_feedback = ft.Container(
+        ft.Text(
+            task.title,
+            color=tokens.text_primary,
+            weight=ft.FontWeight.W_600,
+            max_lines=2,
+            overflow=ft.TextOverflow.ELLIPSIS,
+        ),
+        width=300,
+        bgcolor=tokens.surface_elevated,
+        border=ft.Border.all(tokens.focus_width, tokens.accent_primary),
+        border_radius=tokens.radius_card,
+        padding=tokens.space_3,
+    )
+    drag_handle = draggable_task_handle(
         tokens,
         label=ui_text("dashboard.drag_task", name=task.title),
-        data={"task_id": task.id, "day": day.isoformat()},
+        data={"kind": "task", "task_id": task.id, "day": day.isoformat()},
+        feedback=drag_feedback,
         muted=completed or muted_day,
     )
     surface = ft.Container(
@@ -152,19 +168,15 @@ def _dashboard_task_card(
         animate=ft.Animation(tokens.motion_fast, ft.AnimationCurve.EASE_OUT_CUBIC),
         data={"role": "task-card", "task_id": task.id},
     )
-    hover = ft.GestureDetector(surface, mouse_cursor=ft.MouseCursor.BASIC)
+    def hover(event) -> None:
+        hovering = str(getattr(event, "data", "")).lower() == "true"
+        surface.border = ft.Border.all(
+            tokens.focus_width if hovering else tokens.border_width,
+            tokens.accent_primary if hovering else tokens.border_default,
+        )
 
-    def enter(event) -> None:
-        surface.border = ft.Border.all(tokens.focus_width, tokens.accent_primary)
-        surface.update()
-
-    def exit_hover(event) -> None:
-        surface.border = ft.Border.all(tokens.border_width, tokens.border_default)
-        surface.update()
-
-    hover.on_enter = enter
-    hover.on_exit = exit_hover
-    return hover
+    surface.on_hover = hover
+    return surface
 
 
 def _weekly_progress(data: DashboardReadModel, tokens: ThemeTokens) -> ft.Control:
@@ -254,8 +266,8 @@ def build_dashboard(
     selected_day = _selected_date(route)
     data = services.dashboard.execute(selected_day)
     projects = services.projects.list_projects.execute()
-    day_lists: dict[date, ft.ReorderableListView] = {}
     dashboard_root: ft.ListView | None = None
+    ordering = TaskOrderController(services)
 
     def items_for(model: DashboardReadModel, day: date) -> tuple[TaskListItem, ...]:
         if day == selected_day - timedelta(days=1):
@@ -268,22 +280,13 @@ def build_dashboard(
         if page is not None:
             page.pop_dialog()
 
-    def reload_board() -> None:
-        nonlocal data
-        data = services.dashboard.execute(selected_day)
-        for day, task_list in day_lists.items():
-            items = items_for(data, day)
-            task_list.controls = task_controls(day, items)
-            task_list.header = empty_day_control() if not items else None
-            task_list.update()
-
     def open_create(day: date) -> None:
         if page is None:
             return
 
         def created(_task) -> None:
             close_dialog()
-            reload_board()
+            refresh()
 
         page.show_dialog(
             build_quick_task_dialog(
@@ -303,7 +306,7 @@ def build_dashboard(
 
         def saved() -> None:
             close_dialog()
-            reload_board()
+            refresh()
 
         page.show_dialog(
             build_task_details_dialog(
@@ -321,45 +324,48 @@ def build_dashboard(
     def toggle_complete(task_id: int, day: date) -> None:
         try:
             services.tasks.toggle_completion_for_day.execute(task_id, day)
-            reload_board()
+            refresh()
         except Exception as error:
             report_error(ui_error(error))
 
-    def reorder(event, day: date) -> None:
-        old_index = getattr(event, "old_index", None)
-        new_index = getattr(event, "new_index", None)
-        if old_index is None or new_index is None:
+    def reorder(event, day: date, before_task_id: int | None = None) -> None:
+        payload = drag_payload(event)
+        if not payload or payload.get("kind") != "task":
             return
-        order = [item.task.id for item in items_for(data, day)]
-        if old_index < 0 or old_index >= len(order) or new_index < 0 or new_index > len(order):
+        if payload.get("day") != day.isoformat():
             return
-        if old_index == new_index:
+        task_id = int(payload["task_id"])
+        order = tuple(item.task.id for item in items_for(data, day))
+        if task_id not in order:
             return
-        moved_task_id = order.pop(old_index)
-        order.insert(new_index, moved_task_id)
         try:
-            services.tasks.reorder_for_day.execute(day, tuple(order))
-            reload_board()
+            ordering.move_before_for_day(day, order, task_id, before_task_id)
+            refresh()
         except Exception as error:
             report_error(ui_error(error))
 
     def task_controls(day: date, items: tuple[TaskListItem, ...]) -> list[ft.Control]:
-        controls = [
-            ft.Container(
-                _dashboard_task_card(
-                    item,
-                    tokens,
-                    day=day,
-                    muted_day=day < selected_day,
-                    on_complete=lambda _event, task_id=item.task.id, selected=day: toggle_complete(task_id, selected),
-                    on_open=lambda _event, task_id=item.task.id, selected=day: open_details(task_id, selected),
+        controls = []
+        for item in items:
+            list_item = ft.Container(
+                ft.DragTarget(
+                    _dashboard_task_card(
+                        item,
+                        tokens,
+                        day=day,
+                        muted_day=day < selected_day,
+                        on_complete=lambda _event, task_id=item.task.id, selected=day: toggle_complete(task_id, selected),
+                        on_open=lambda _event, task_id=item.task.id, selected=day: open_details(task_id, selected),
+                    ),
+                    group="task-card",
+                    data={"day": day.isoformat(), "before_task_id": item.task.id},
+                    on_accept=lambda event, selected=day, before=item.task.id: reorder(event, selected, before),
                 ),
                 padding=ft.Padding.only(bottom=tokens.space_2),
                 key=f"dashboard-task-{day.isoformat()}-{item.task.id}",
                 data={"role": "task-list-item", "task_id": item.task.id, "gap_after": tokens.space_2},
             )
-            for item in items
-        ]
+            controls.append(list_item)
         return controls
 
     def empty_day_control() -> ft.Control:
@@ -372,12 +378,14 @@ def build_dashboard(
     def contain_dashboard_scroll(_event) -> None:
         if dashboard_root is not None and dashboard_root.scroll is not None:
             dashboard_root.scroll = None
-            dashboard_root.update()
+            if page is not None and hasattr(page, "update"):
+                page.update()
 
     def release_dashboard_scroll(_event) -> None:
         if dashboard_root is not None and dashboard_root.scroll is None:
             dashboard_root.scroll = ft.ScrollMode.AUTO
-            dashboard_root.update()
+            if page is not None and hasattr(page, "update"):
+                page.update()
 
     def add_task_control(day: date, disabled: bool) -> ft.Control:
         label = ui_text("dashboard.add_task")
@@ -418,16 +426,14 @@ def build_dashboard(
         )
 
         if not disabled:
-            def enter(_event) -> None:
-                surface.border = ft.Border.all(tokens.border_width, tokens.accent_primary)
-                surface.update()
+            def hover(event) -> None:
+                hovering = str(getattr(event, "data", "")).lower() == "true"
+                surface.border = ft.Border.all(
+                    tokens.border_width,
+                    tokens.accent_primary if hovering else tokens.dashboard_add_border,
+                )
 
-            def exit_hover(_event) -> None:
-                surface.border = ft.Border.all(tokens.border_width, tokens.dashboard_add_border)
-                surface.update()
-
-            control.on_enter = enter
-            control.on_exit = exit_hover
+            surface.on_hover = hover
         return control
 
     def day_column(day: date, title_key: str, *, disabled_add: bool, last: bool = False) -> ft.Control:
@@ -446,22 +452,22 @@ def build_dashboard(
             data={"role": "date-chip", "day": day.isoformat()},
         )
         items = items_for(data, day)
-        task_list = ft.ReorderableListView(
-            controls=task_controls(day, items),
+        task_list = ft.ListView(
+            controls=task_controls(day, items) or [empty_day_control()],
             spacing=tokens.space_0,
             scroll=ft.ScrollMode.HIDDEN,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
             expand=True,
             build_controls_on_demand=False,
-            show_default_drag_handles=False,
-            mouse_cursor=ft.MouseCursor.GRAB,
-            header=empty_day_control() if not items else None,
-            on_reorder=lambda event, selected=day: reorder(event, selected),
             data={"role": "day-task-list", "day": day.isoformat()},
         )
-        day_lists[day] = task_list
         scroll_region = ft.GestureDetector(
-            task_list,
+            ft.DragTarget(
+                task_list,
+                group="task-card",
+                data={"role": "day-task-drop-target", "day": day.isoformat()},
+                on_accept=lambda event, selected=day: reorder(event, selected),
+            ),
             on_enter=contain_dashboard_scroll,
             on_exit=release_dashboard_scroll,
             expand=True,
@@ -518,7 +524,7 @@ def build_dashboard(
         border=ft.Border.all(tokens.border_width, tokens.border_default),
         border_radius=tokens.radius_large,
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
-        width=1080,
+        col={"sm": 12, "xxl": 9},
         data={"role": "three-day-task-board", "max_width": 1080},
     )
 
@@ -577,32 +583,17 @@ def build_dashboard(
 
     weekly_progress_widget = ft.Container(
         card(ui_text("dashboard.weekly.title"), [_weekly_progress(data, tokens)], tokens),
-        width=360,
+        col={"sm": 12, "xxl": 3},
         data={"role": "weekly-progress-widget"},
     )
 
-    def resize_first_bento_row(event) -> None:
-        available_width = max(0, float(event.width))
-        minimum_weekly_width = 320
-        wide_layout = available_width >= 1080 + tokens.space_6 + minimum_weekly_width
-        board_width = min(1080, available_width)
-        weekly_width = available_width - board_width - tokens.space_6 if wide_layout else available_width
-        if three_day_task_board.width != board_width:
-            three_day_task_board.width = board_width
-            three_day_task_board.update()
-        if weekly_progress_widget.width != weekly_width:
-            weekly_progress_widget.width = weekly_width
-            weekly_progress_widget.update()
-
-    first_bento_row = ft.Row(
+    first_bento_row = ft.ResponsiveRow(
         [three_day_task_board, weekly_progress_widget],
         spacing=tokens.space_6,
         run_spacing=tokens.space_6,
-        wrap=True,
         alignment=ft.MainAxisAlignment.START,
         vertical_alignment=ft.CrossAxisAlignment.START,
-        on_size_change=resize_first_bento_row,
-        data={"role": "first-bento-row", "widget_gap": tokens.space_6, "responsive_fallback": "wrap"},
+        data={"role": "first-bento-row", "widget_gap": tokens.space_6, "responsive_fallback": "stack"},
     )
 
     today_count = len(data.today_tasks)

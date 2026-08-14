@@ -1,7 +1,7 @@
 # Overlord Repository Guide
 
 ## Purpose
-Overlord is a private, local-first Windows personal operating system. Foundation v0.1 and UX phases U1-U5 cover the stable shell, dashboard and daily planning, tasks, projects, 12-week cycles, and categorized settings.
+Overlord is a private, local-first Windows personal operating system. Foundation v0.1 and UX phases U1-U5 cover the stable shell, date-driven Dashboard and Task planning, projects, 12-week cycles, and categorized settings. The former separate Daily Planning workflow is retired.
 
 ## Stack and commands
 Python 3.14, Flet 0.84, SQLite.
@@ -27,9 +27,9 @@ Dependencies point Presentation → Application → Domain. Infrastructure imple
 Never recreate or test against `data/overlord.db`. Use disposable databases or copies. Schema changes require immutable forward migrations and a validated SQLite backup. Repositories never commit; commands own transaction boundaries.
 
 ## Design system
-Use semantic tokens from `overlord/presentation/design_system`. Do not place raw UI colors in pages/components. Interface icons must come from the local Lucide registry.
+Use semantic tokens from `overlord/ui/design_system`. Do not place raw UI colors in pages/components. Interface icons must come from the local Lucide registry.
 
-Visible English copy should come from `overlord/presentation/strings.py` when practical. Use shared Presentation components only for patterns already repeated across approved screens. Preserve keyboard focus, tooltips for icon-only controls, compact actionable empty states, contained errors, and reduced-motion behavior.
+Visible English copy should come from `overlord/ui/strings.py` when practical. Use shared Presentation components only for patterns already repeated across approved screens. Preserve keyboard focus, tooltips for icon-only controls, compact actionable empty states, contained errors, and reduced-motion behavior.
 
 ## Domain invariants
 There is one Task entity. A Task may be standalone (`project_id = NULL`); never create a fallback Project to satisfy storage. Dashboard owns no persisted data. Blocked is derived from open Blockers. Definition of Done is required before Primary or Milestone assignment. Projects remain independent of Cycles.

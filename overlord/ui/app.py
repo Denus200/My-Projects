@@ -39,6 +39,30 @@ class RouteTiming:
     failed: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class RouteRenderRequest:
+    requested_route: str
+    previous_route: str
+    tokens: ThemeTokens
+    path: str
+    family: AppRoute | None
+    started_at: float
+    query_started_at: float
+    log_transition: bool
+
+
+@dataclass(frozen=True, slots=True)
+class RouteRenderResult:
+    requested_route: str
+    previous_route: str
+    tokens: ThemeTokens
+    content: ft.Control
+    failed: bool
+    started_at: float
+    query_ms: float
+    log_transition: bool
+
+
 class OverlordApp:
     def __init__(
         self,
@@ -141,43 +165,16 @@ class OverlordApp:
         self._pending_route = requested_route
         self._transition_loading_visible = False
         started = perf_counter()
-        self._log(
-            "route_transition_requested requested_route=%s previous_route=%s",
+        request = self._begin_route_resolution(
             requested_route,
-            previous_route,
+            previous_route=previous_route,
+            started_at=started,
+            log_transition=True,
         )
-
-        self.state.route = requested_route
-        self._apply_route_selection(requested_route)
-        if self._shell is not None:
-            self._shell.sidebar.update_selection(self._tokens(), requested_route)
         self.page.update()
 
         loading_task = asyncio.create_task(self._show_loading_after_delay(generation))
-        query_started = perf_counter()
-        self._log(
-            "route_query_start requested_route=%s previous_route=%s",
-            requested_route,
-            previous_route,
-        )
-        failed = False
-        try:
-            tokens = self._tokens()
-            parsed = urlparse(requested_route)
-            family = route_family(parsed.path)
-            content = await asyncio.to_thread(self._page_content, tokens, parsed.path, family)
-        except Exception as error:
-            failed = True
-            content = self._route_error(self._tokens(), error)
-        query_complete = perf_counter()
-        query_ms = (query_complete - query_started) * 1000
-        self._log(
-            "route_query_complete requested_route=%s previous_route=%s elapsed_ms=%.2f failed=%s",
-            requested_route,
-            previous_route,
-            query_ms,
-            failed,
-        )
+        result = await asyncio.to_thread(self._resolve_route, request)
 
         loading_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
@@ -185,35 +182,8 @@ class OverlordApp:
         if generation != self._transition_generation:
             return False
 
-        render_started = perf_counter()
-        self._set_loading_visible(False)
-        assert self._shell is not None
-        self._shell.set_content(content)
-        self._refresh_banner(self._tokens())
-        self.page.update()
-        render_complete = perf_counter()
-        render_ms = (render_complete - render_started) * 1000
-        total_ms = (render_complete - started) * 1000
+        self._commit_route(result, loading_visible=self._transition_loading_visible)
         self._pending_route = None
-        self.last_route_timing = RouteTiming(
-            requested_route=requested_route,
-            previous_route=previous_route,
-            query_ms=query_ms,
-            render_ms=render_ms,
-            total_ms=total_ms,
-            loading_visible=self._transition_loading_visible,
-            failed=failed,
-        )
-        self._log(
-            "route_render_complete requested_route=%s previous_route=%s query_ms=%.2f render_ms=%.2f total_ms=%.2f loading_visible=%s failed=%s",
-            requested_route,
-            previous_route,
-            query_ms,
-            render_ms,
-            total_ms,
-            self._transition_loading_visible,
-            failed,
-        )
         return True
 
     def navigate(self, route: str) -> None:
@@ -321,8 +291,25 @@ class OverlordApp:
         self._render_route_sync(self.state.route, previous_route=self.state.route, log_transition=False)
 
     def _render_route_sync(self, route: str, *, previous_route: str, log_transition: bool) -> None:
-        requested_route = self._canonical_route(route)
         started = perf_counter()
+        request = self._begin_route_resolution(
+            route,
+            previous_route=previous_route,
+            started_at=started,
+            log_transition=log_transition,
+        )
+        result = self._resolve_route(request)
+        self._commit_route(result, loading_visible=False)
+
+    def _begin_route_resolution(
+        self,
+        route: str,
+        *,
+        previous_route: str,
+        started_at: float,
+        log_transition: bool,
+    ) -> RouteRenderRequest:
+        requested_route = self._canonical_route(route)
         self.state.route = requested_route
         self._apply_route_selection(requested_route)
         tokens = self._tokens()
@@ -342,49 +329,77 @@ class OverlordApp:
                 requested_route,
                 previous_route,
             )
-        query_started = perf_counter()
+        return RouteRenderRequest(
+            requested_route=requested_route,
+            previous_route=previous_route,
+            tokens=tokens,
+            path=parsed.path,
+            family=family,
+            started_at=started_at,
+            query_started_at=perf_counter(),
+            log_transition=log_transition,
+        )
+
+    def _resolve_route(self, request: RouteRenderRequest) -> RouteRenderResult:
         failed = False
         try:
-            content = self._page_content(tokens, parsed.path, family)
+            content = self._page_content(request.tokens, request.path, request.family)
         except Exception as error:
             failed = True
-            content = self._route_error(tokens, error)
-        query_complete = perf_counter()
-        query_ms = (query_complete - query_started) * 1000
+            content = self._route_error(request.tokens, error)
+        query_ms = (perf_counter() - request.query_started_at) * 1000
+        if request.log_transition:
+            self._log(
+                "route_query_complete requested_route=%s previous_route=%s elapsed_ms=%.2f failed=%s",
+                request.requested_route,
+                request.previous_route,
+                query_ms,
+                failed,
+            )
+        return RouteRenderResult(
+            requested_route=request.requested_route,
+            previous_route=request.previous_route,
+            tokens=request.tokens,
+            content=content,
+            failed=failed,
+            started_at=request.started_at,
+            query_ms=query_ms,
+            log_transition=request.log_transition,
+        )
+
+    def _commit_route(self, result: RouteRenderResult, *, loading_visible: bool) -> None:
+        self.state.route = result.requested_route
+        self._apply_page_theme(result.tokens)
+        if self._shell is not None:
+            self._shell.sidebar.update_selection(result.tokens, result.requested_route)
         assert self._shell is not None
-        self._shell.set_content(content)
-        self._refresh_banner(tokens)
+        self._shell.set_content(result.content)
+        self._refresh_banner(result.tokens)
         self._set_loading_visible(False)
         render_started = perf_counter()
         self.page.update()
         render_complete = perf_counter()
         render_ms = (render_complete - render_started) * 1000
-        total_ms = (render_complete - started) * 1000
-        if log_transition:
+        total_ms = (render_complete - result.started_at) * 1000
+        if result.log_transition:
             self._log(
-                "route_query_complete requested_route=%s previous_route=%s elapsed_ms=%.2f failed=%s",
-                requested_route,
-                previous_route,
-                query_ms,
-                failed,
-            )
-            self._log(
-                "route_render_complete requested_route=%s previous_route=%s query_ms=%.2f render_ms=%.2f total_ms=%.2f loading_visible=False failed=%s",
-                requested_route,
-                previous_route,
-                query_ms,
+                "route_render_complete requested_route=%s previous_route=%s query_ms=%.2f render_ms=%.2f total_ms=%.2f loading_visible=%s failed=%s",
+                result.requested_route,
+                result.previous_route,
+                result.query_ms,
                 render_ms,
                 total_ms,
-                failed,
+                loading_visible,
+                result.failed,
             )
         self.last_route_timing = RouteTiming(
-            requested_route=requested_route,
-            previous_route=previous_route,
-            query_ms=query_ms,
+            requested_route=result.requested_route,
+            previous_route=result.previous_route,
+            query_ms=result.query_ms,
             render_ms=render_ms,
             total_ms=total_ms,
-            loading_visible=False,
-            failed=failed,
+            loading_visible=loading_visible,
+            failed=result.failed,
         )
 
     def _tokens(self) -> ThemeTokens:

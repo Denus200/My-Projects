@@ -4,9 +4,9 @@ import flet as ft
 
 from .styles import (
     ButtonVariant,
-    alt_role,
     button_style,
-    checkbox_defaults,
+    checkbox_theme_defaults,
+    chip_theme_defaults,
     menu_style,
     table_theme,
     text_button_style,
@@ -30,7 +30,6 @@ def _text_theme(tokens: ThemeTokens) -> ft.TextTheme:
 
 
 def _theme(tokens: ThemeTokens, *, motion_enabled: bool = True) -> ft.Theme:
-    check = checkbox_defaults(tokens)
     return ft.Theme(
         font_family="Segoe UI",
         visual_density=ft.VisualDensity.COMPACT,
@@ -79,18 +78,7 @@ def _theme(tokens: ThemeTokens, *, motion_enabled: bool = True) -> ft.Theme:
             menu_style=menu_style(tokens),
             text_style=ft.TextStyle(size=tokens.text_body, color=tokens.text_primary),
         ),
-        checkbox_theme=ft.CheckboxTheme(
-            overlay_color=check["overlay_color"],
-            check_color=check["check_color"],
-            fill_color=check["fill_color"],
-            splash_radius=check["splash_radius"],
-            border_side=ft.BorderSide(tokens.border_width, tokens.border_strong),
-            visual_density=ft.VisualDensity.COMPACT,
-            mouse_cursor={
-                ft.ControlState.DISABLED: ft.MouseCursor.FORBIDDEN,
-                ft.ControlState.DEFAULT: ft.MouseCursor.CLICK,
-            },
-        ),
+        checkbox_theme=ft.CheckboxTheme(**checkbox_theme_defaults(tokens)),
         switch_theme=ft.SwitchTheme(
             thumb_color={
                 ft.ControlState.DISABLED: tokens.text_disabled,
@@ -123,30 +111,12 @@ def _theme(tokens: ThemeTokens, *, motion_enabled: bool = True) -> ft.Theme:
             },
             padding=tokens.space_1,
         ),
-        chip_theme=ft.ChipTheme(
-            color={
-                ft.ControlState.DISABLED: tokens.text_disabled,
-                ft.ControlState.SELECTED: alt_role(tokens, tokens.accent_alt, tokens.accent_primary),
-                ft.ControlState.HOVERED: alt_role(tokens, tokens.accent_alt_hover, tokens.accent_primary_hover),
-                ft.ControlState.DEFAULT: tokens.text_secondary,
-            },
-            bgcolor=tokens.control_background,
-            selected_color=alt_role(tokens, tokens.interactive_selected_alt, tokens.interactive_selected),
-            disabled_color=tokens.control_background_disabled,
-            check_color=alt_role(tokens, tokens.accent_alt, tokens.accent_primary),
-            elevation=0,
-            elevation_on_click=0,
-            shape=ft.RoundedRectangleBorder(radius=tokens.radius_pill),
-            padding=ft.Padding.symmetric(horizontal=tokens.space_2, vertical=tokens.space_1),
-            label_text_style=ft.TextStyle(size=tokens.text_small, weight=ft.FontWeight.W_600),
-            border_side=ft.BorderSide(tokens.border_width, tokens.border_strong),
-            show_checkmark=True,
-        ),
+        chip_theme=ft.ChipTheme(**chip_theme_defaults(tokens)),
         data_table_theme=table_theme(tokens),
         color_scheme=ft.ColorScheme(
             primary=tokens.accent_primary,
             on_primary=tokens.on_accent,
-            secondary=alt_role(tokens, tokens.accent_alt, tokens.pink_accent),
+            secondary=tokens.theme_secondary,
             surface=tokens.surface_card,
             on_surface=tokens.text_primary,
             error=tokens.error.main,

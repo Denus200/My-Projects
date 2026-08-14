@@ -5,6 +5,7 @@ from collections.abc import Callable
 import flet as ft
 
 from overlord.app.services import ApplicationServices
+from overlord.modules.validation import FieldValidationError
 from overlord.ui.components.controls import primary_button, select_field, selection_button, text_field
 from overlord.ui.state import AppSessionState
 from overlord.ui.strings import ui_error, ui_text
@@ -254,10 +255,9 @@ def build_settings(
             )
             apply_settings(updated, ui_text("settings.saved"))
         except ValueError as error:
-            raw = str(error)
             message.value = ui_error(error)
             message.color = tokens.error.text
-            if "cycle length" in raw.lower() or "integer" in raw.lower():
+            if isinstance(error, FieldValidationError) and error.field == "default_cycle_length":
                 cycle_length.error = ui_error(error)
                 _safe_update(cycle_length)
             _safe_update(message)

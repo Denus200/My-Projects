@@ -21,11 +21,6 @@ def _cursor_states() -> dict[ft.ControlState, ft.MouseCursor]:
     }
 
 
-def alt_role(tokens: ThemeTokens, alt: str | None, current: str) -> str:
-    """Use the approved light alt role without changing the current dark palette."""
-    return alt if alt is not None else current
-
-
 def _button_colors(tokens: ThemeTokens, variant: ButtonVariant) -> tuple[dict, dict, dict]:
     if variant is ButtonVariant.PRIMARY:
         foreground = {
@@ -68,14 +63,14 @@ def _button_colors(tokens: ThemeTokens, variant: ButtonVariant) -> tuple[dict, d
     is_tertiary = variant is ButtonVariant.TERTIARY
     foreground = {
         ft.ControlState.DISABLED: tokens.text_disabled,
-        ft.ControlState.PRESSED: alt_role(tokens, tokens.accent_alt_pressed, tokens.accent_primary) if is_tertiary else tokens.text_primary,
-        ft.ControlState.HOVERED: alt_role(tokens, tokens.accent_alt_hover, tokens.accent_primary) if is_tertiary else tokens.text_primary,
-        ft.ControlState.DEFAULT: tokens.text_primary if variant is ButtonVariant.SECONDARY else alt_role(tokens, tokens.accent_alt, tokens.accent_primary),
+        ft.ControlState.PRESSED: tokens.tertiary_foreground_pressed if is_tertiary else tokens.text_primary,
+        ft.ControlState.HOVERED: tokens.tertiary_foreground_hover if is_tertiary else tokens.text_primary,
+        ft.ControlState.DEFAULT: tokens.text_primary if variant is ButtonVariant.SECONDARY else tokens.tertiary_foreground,
     }
     background = {
         ft.ControlState.DISABLED: tokens.control_background_disabled,
-        ft.ControlState.PRESSED: alt_role(tokens, tokens.interactive_pressed_alt, tokens.interactive_pressed) if is_tertiary else tokens.interactive_pressed,
-        ft.ControlState.HOVERED: alt_role(tokens, tokens.interactive_hover_alt, tokens.interactive_hover) if is_tertiary else tokens.interactive_hover,
+        ft.ControlState.PRESSED: tokens.selection_surface_pressed if is_tertiary else tokens.interactive_pressed,
+        ft.ControlState.HOVERED: tokens.selection_surface_hover if is_tertiary else tokens.interactive_hover,
         ft.ControlState.FOCUSED: tokens.control_background,
         ft.ControlState.DEFAULT: tokens.control_background if variant is ButtonVariant.SECONDARY else ft.Colors.TRANSPARENT,
     }
@@ -131,8 +126,8 @@ def selection_button_style(
     motion_enabled: bool = True,
 ) -> ft.ButtonStyle:
     style = button_style(tokens, ButtonVariant.SECONDARY, motion_enabled=motion_enabled, compact=True)
-    selected_accent = alt_role(tokens, tokens.accent_alt, tokens.accent_primary)
-    selected_surface = alt_role(tokens, tokens.interactive_selected_alt, tokens.interactive_selected)
+    selected_accent = tokens.selection_foreground
+    selected_surface = tokens.selection_surface_selected
     style.color = {
         ft.ControlState.DISABLED: tokens.text_disabled,
         ft.ControlState.SELECTED: selected_accent,
@@ -140,8 +135,8 @@ def selection_button_style(
     }
     style.bgcolor = {
         ft.ControlState.DISABLED: tokens.control_background_disabled,
-        ft.ControlState.PRESSED: alt_role(tokens, tokens.interactive_pressed_alt, tokens.interactive_pressed),
-        ft.ControlState.HOVERED: alt_role(tokens, tokens.interactive_hover_alt, tokens.interactive_hover),
+        ft.ControlState.PRESSED: tokens.selection_surface_pressed,
+        ft.ControlState.HOVERED: tokens.selection_surface_hover,
         ft.ControlState.FOCUSED: selected_surface if selected else tokens.control_background,
         ft.ControlState.DEFAULT: selected_surface if selected else tokens.control_background,
     }
@@ -246,14 +241,99 @@ def checkbox_defaults(tokens: ThemeTokens) -> dict:
     }
 
 
+def checkbox_theme_defaults(tokens: ThemeTokens) -> dict:
+    defaults = checkbox_defaults(tokens)
+    return {
+        "overlay_color": defaults["overlay_color"],
+        "check_color": defaults["check_color"],
+        "fill_color": defaults["fill_color"],
+        "splash_radius": defaults["splash_radius"],
+        "border_side": defaults["border_side"][ft.ControlState.DEFAULT],
+        "visual_density": defaults["visual_density"],
+        "mouse_cursor": {
+            ft.ControlState.DISABLED: ft.MouseCursor.FORBIDDEN,
+            ft.ControlState.DEFAULT: defaults["mouse_cursor"],
+        },
+    }
+
+
+def _chip_roles(tokens: ThemeTokens) -> dict[str, object]:
+    return {
+        "background": tokens.control_background,
+        "selected_background": tokens.selection_surface_selected,
+        "disabled_background": tokens.control_background_disabled,
+        "disabled_foreground": tokens.text_disabled,
+        "selected_foreground": tokens.selection_foreground,
+        "pressed_foreground": tokens.selection_foreground_pressed,
+        "hovered_foreground": tokens.selection_foreground_hover,
+        "focused_foreground": tokens.focus_ring,
+        "default_foreground": tokens.text_secondary,
+        "border": ft.BorderSide(tokens.border_width, tokens.border_strong),
+        "shape": ft.RoundedRectangleBorder(radius=tokens.radius_pill),
+        "padding": ft.Padding.symmetric(horizontal=tokens.space_2, vertical=tokens.space_1),
+        "label_text_style": ft.TextStyle(size=tokens.text_small, weight=ft.FontWeight.W_600),
+    }
+
+
+def chip_control_defaults(tokens: ThemeTokens, *, motion_enabled: bool = True) -> dict:
+    roles = _chip_roles(tokens)
+    duration = tokens.motion_fast if motion_enabled else tokens.motion_none
+    return {
+        "bgcolor": roles["background"],
+        "selected_color": roles["selected_background"],
+        "disabled_color": roles["disabled_background"],
+        "color": {
+            ft.ControlState.DISABLED: roles["disabled_foreground"],
+            ft.ControlState.SELECTED: roles["selected_foreground"],
+            ft.ControlState.PRESSED: roles["pressed_foreground"],
+            ft.ControlState.HOVERED: roles["hovered_foreground"],
+            ft.ControlState.FOCUSED: roles["focused_foreground"],
+            ft.ControlState.DEFAULT: roles["default_foreground"],
+        },
+        "border_side": roles["border"],
+        "check_color": roles["selected_foreground"],
+        "show_checkmark": True,
+        "shape": roles["shape"],
+        "padding": roles["padding"],
+        "label_text_style": roles["label_text_style"],
+        "elevation": 0,
+        "elevation_on_click": 0,
+        "enable_animation_style": ft.AnimationStyle(duration=duration),
+        "select_animation_style": ft.AnimationStyle(duration=duration),
+    }
+
+
+def chip_theme_defaults(tokens: ThemeTokens) -> dict:
+    roles = _chip_roles(tokens)
+    return {
+        "color": {
+            ft.ControlState.DISABLED: roles["disabled_foreground"],
+            ft.ControlState.SELECTED: roles["selected_foreground"],
+            ft.ControlState.HOVERED: roles["hovered_foreground"],
+            ft.ControlState.DEFAULT: roles["default_foreground"],
+        },
+        "bgcolor": roles["background"],
+        "selected_color": roles["selected_background"],
+        "disabled_color": roles["disabled_background"],
+        "check_color": roles["selected_foreground"],
+        "elevation": 0,
+        "elevation_on_click": 0,
+        "shape": roles["shape"],
+        "padding": roles["padding"],
+        "label_text_style": roles["label_text_style"],
+        "border_side": roles["border"],
+        "show_checkmark": True,
+    }
+
+
 def table_theme(tokens: ThemeTokens) -> ft.DataTableTheme:
     return ft.DataTableTheme(
         column_spacing=tokens.space_6,
         data_row_min_height=tokens.table_row_height,
         data_row_max_height=tokens.table_row_height,
         data_row_color={
-            ft.ControlState.SELECTED: alt_role(tokens, tokens.interactive_selected_alt, tokens.interactive_selected),
-            ft.ControlState.HOVERED: alt_role(tokens, tokens.interactive_hover_alt, tokens.interactive_hover),
+            ft.ControlState.SELECTED: tokens.selection_surface_selected,
+            ft.ControlState.HOVERED: tokens.selection_surface_hover,
             ft.ControlState.DEFAULT: tokens.surface_card,
         },
         data_text_style=ft.TextStyle(size=tokens.text_body, color=tokens.text_primary),

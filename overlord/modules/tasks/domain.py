@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time
 from enum import StrEnum
 
+from overlord.modules.validation import FieldValidationError
+
 
 class TaskLifecycle(StrEnum):
     BACKLOG = "backlog"
@@ -50,13 +52,13 @@ class Task:
 def require_task_title(title: str) -> str:
     clean = title.strip()
     if not clean:
-        raise ValueError("Task title is required.")
+        raise FieldValidationError("title", "required", "Task title is required.")
     return clean
 
 
 def validate_estimate(minutes: int | None) -> int | None:
     if minutes is not None and minutes <= 0:
-        raise ValueError("Estimate must be a positive number of minutes.")
+        raise FieldValidationError("estimate", "positive", "Estimate must be a positive number of minutes.")
     return minutes
 
 
@@ -68,22 +70,22 @@ def validate_schedule(
     deadline_at: datetime | None,
 ) -> None:
     if start_time is not None and start_date is None:
-        raise ValueError("A start time requires a start date.")
+        raise FieldValidationError("start_time", "requires_start_date", "A start time requires a start date.")
     if end_date is not None and start_date is None:
-        raise ValueError("An end date requires a start date.")
+        raise FieldValidationError("end_date", "requires_start_date", "An end date requires a start date.")
     if end_time is not None and end_date is None:
-        raise ValueError("An end time requires an end date.")
+        raise FieldValidationError("end_time", "requires_end_date", "An end time requires an end date.")
     if deadline_at is not None and start_date is None:
-        raise ValueError("A deadline requires a start date.")
+        raise FieldValidationError("deadline", "requires_start_date", "A deadline requires a start date.")
     if start_date is not None and end_date is not None:
         if end_date < start_date:
-            raise ValueError("The end date cannot be before the start date.")
+            raise FieldValidationError("end_date", "before_start", "The end date cannot be before the start date.")
         if end_date == start_date and start_time is not None and end_time is not None and end_time < start_time:
-            raise ValueError("The end time cannot be before the start time.")
+            raise FieldValidationError("end_time", "before_start", "The end time cannot be before the start time.")
     if start_date is not None and deadline_at is not None:
         start_at = datetime.combine(start_date, start_time or time.min)
         if deadline_at < start_at:
-            raise ValueError("The deadline cannot be before the task starts.")
+            raise FieldValidationError("deadline", "before_start", "The deadline cannot be before the task starts.")
 
 
 def is_scheduled_for_day(task: Task, day: date) -> bool:

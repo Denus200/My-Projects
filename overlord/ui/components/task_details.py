@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time
+from datetime import date
 from typing import Callable
 
 import flet as ft
@@ -8,28 +8,20 @@ import flet as ft
 from overlord.app.services import ApplicationServices
 from overlord.modules.projects.domain import Project
 from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.modules.validation import FieldValidationError
 from overlord.ui.components.controls import checkbox, choice_chip, primary_button, secondary_button, select_field, text_field
-from overlord.ui.components.tasks import _display_date, _flexible_date_value, _project_id, _project_options, _time_value
+from overlord.ui.components.task_form_values import (
+    deadline_display,
+    deadline_value,
+    display_date,
+    flexible_date_value,
+    project_id,
+    project_options,
+    time_value,
+)
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import ThemeTokens
 from overlord.ui.strings import ui_error, ui_text
-
-
-def _deadline_display(value: datetime | None) -> str:
-    if value is None:
-        return ""
-    return value.strftime("%d.%m.%Y %H:%M")
-
-
-def _deadline_value(value: str) -> datetime | None:
-    clean = value.strip()
-    if not clean:
-        return None
-    parts = clean.rsplit(" ", 1)
-    selected_date = _flexible_date_value(parts[0])
-    selected_time = _time_value(parts[1]) if len(parts) == 2 else time.max
-    return datetime.combine(selected_date, selected_time)
-
 
 def build_task_details_dialog(
     services: ApplicationServices,
@@ -55,12 +47,12 @@ def build_task_details_dialog(
         tokens,
         label=ui_text("tasks.field_project"),
         value=str(task.project_id) if task.project_id is not None else "none",
-        options=_project_options(projects),
+        options=project_options(projects),
     )
     scheduled_date = text_field(
         tokens,
         label=ui_text("tasks.field_start_date"),
-        value=_display_date(task.schedule_start_date) if task.schedule_start_date else "",
+        value=display_date(task.schedule_start_date) if task.schedule_start_date else "",
         hint_text=ui_text("tasks.date_hint"),
     )
     scheduled_time = text_field(
@@ -72,7 +64,7 @@ def build_task_details_dialog(
     deadline = text_field(
         tokens,
         label=ui_text("tasks.field_deadline"),
-        value=_deadline_display(task.deadline_at),
+        value=deadline_display(task.deadline_at),
         hint_text=f"{ui_text('tasks.date_hint')} HH:MM",
     )
     estimate = text_field(
@@ -109,18 +101,26 @@ def build_task_details_dialog(
         message.value = ""
         try:
             minutes = int(estimate.value) if (estimate.value or "").strip() else None
-            chosen_date = _flexible_date_value(scheduled_date.value or "") if (scheduled_date.value or "").strip() else None
-            chosen_time = _time_value(scheduled_time.value or "") if (scheduled_time.value or "").strip() else None
+            chosen_date = (
+                flexible_date_value(scheduled_date.value or "", field="scheduled_date")
+                if (scheduled_date.value or "").strip()
+                else None
+            )
+            chosen_time = (
+                time_value(scheduled_time.value or "", field="scheduled_time")
+                if (scheduled_time.value or "").strip()
+                else None
+            )
             services.tasks.update_task.execute(
                 task.id,
-                project_id=_project_id(project.value),
+                project_id=project_id(project.value),
                 title=title.value or "",
                 description=description.value or "",
                 schedule_start_date=chosen_date,
                 schedule_start_time=chosen_time,
                 schedule_end_date=None if chosen_date != task.schedule_start_date else task.schedule_end_date,
                 schedule_end_time=None if chosen_date != task.schedule_start_date else task.schedule_end_time,
-                deadline_at=_deadline_value(deadline.value or ""),
+                deadline_at=deadline_value(deadline.value or "", field="deadline"),
                 estimate_minutes=minutes,
                 importance=True if importance.selected else None,
                 urgency=True if urgency.selected else None,
@@ -136,26 +136,28 @@ def build_task_details_dialog(
                         TaskLifecycle.COMPLETED if completed.value else TaskLifecycle.PLANNED,
                         "Changed in Task Details",
                     )
-            on_saved()
         except Exception as error:
-            raw = str(error).lower()
             text = ui_error(error)
-            if "title" in raw:
+            field = error.field if isinstance(error, FieldValidationError) else None
+            code = error.code if isinstance(error, FieldValidationError) else None
+            if field == "title":
                 title.error = text
                 title.update()
-            elif "estimate" in raw:
+            elif field == "estimate":
                 estimate.error = text
                 estimate.update()
-            elif "time" in raw:
+            elif code == "time_format" or field in {"start_time", "end_time", "scheduled_time"}:
                 scheduled_time.error = text
                 scheduled_time.update()
-            elif "date" in raw or "deadline" in raw:
+            elif code in {"date_format", "human_date_format", "datetime_format"} or field == "deadline":
                 deadline.error = text
                 deadline.update()
             else:
                 message.value = text
                 message.update()
                 report_error(text)
+        else:
+            on_saved()
 
     close_button = ft.IconButton(
         icon=lucide_icon(

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
+from overlord.modules.validation import FieldValidationError
+
 
 class ProjectStatus(StrEnum):
     ACTIVE = "active"
@@ -31,5 +33,5 @@ class Project:
 def require_project_title(title: str) -> str:
     clean = title.strip()
     if not clean:
-        raise ValueError("Project title is required.")
+        raise FieldValidationError("title", "required", "Project title is required.")
     return clean

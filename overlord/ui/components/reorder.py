@@ -32,30 +32,18 @@ def task_drag_handle_surface(
     )
 
 
-def reorderable_task_handle(
-    tokens: ThemeTokens,
-    *,
-    label: str,
-    data: dict[str, object],
-    muted: bool = False,
-) -> ft.ReorderableDragHandle:
-    return ft.ReorderableDragHandle(
-        task_drag_handle_surface(tokens, label=label, muted=muted),
-        data={"role": "task-drag-handle", **data},
-        mouse_cursor=ft.MouseCursor.GRAB,
-    )
-
-
 def draggable_task_handle(
     tokens: ThemeTokens,
     *,
     label: str,
     data: dict[str, object],
     feedback: ft.Control,
+    group: str = "task-card",
+    muted: bool = False,
 ) -> ft.Draggable:
     return ft.Draggable(
-        task_drag_handle_surface(tokens, label=label),
-        group="task-card",
+        task_drag_handle_surface(tokens, label=label, muted=muted),
+        group=group,
         data={"role": "task-drag-handle", **data},
         content_when_dragging=ft.Container(
             width=tokens.icon_large,
@@ -65,3 +53,9 @@ def draggable_task_handle(
         ),
         content_feedback=feedback,
     )
+
+
+def drag_payload(event) -> dict[str, object] | None:
+    source = getattr(event, "src", None)
+    payload = getattr(source, "data", None)
+    return payload if isinstance(payload, dict) else None

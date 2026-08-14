@@ -32,6 +32,16 @@ class ThemeTokens:
     interactive_hover: str
     interactive_pressed: str
     interactive_selected: str
+    tertiary_foreground: str
+    tertiary_foreground_hover: str
+    tertiary_foreground_pressed: str
+    selection_foreground: str
+    selection_foreground_hover: str
+    selection_foreground_pressed: str
+    selection_surface_hover: str
+    selection_surface_pressed: str
+    selection_surface_selected: str
+    theme_secondary: str
     control_background: str
     control_background_hover: str
     control_background_disabled: str
@@ -60,27 +70,12 @@ class ThemeTokens:
     soft_red_background: str
     soft_red_border: str
     soft_red_text: str
-    # Deprecated compatibility tokens. New secondary emphasis uses the alt family.
-    pink_accent: str
-    pink_background: str
-    pink_text: str
     success: StateColors
     warning: StateColors
     blocker: StateColors
     info: StateColors
     neutral: StateColors
     error: StateColors
-    accent_alt: str | None = None
-    accent_alt_hover: str | None = None
-    accent_alt_pressed: str | None = None
-    accent_alt_disabled: str | None = None
-    on_accent_alt: str | None = None
-    interactive_hover_alt: str | None = None
-    interactive_pressed_alt: str | None = None
-    interactive_selected_alt: str | None = None
-    soft_teal_background: str | None = None
-    soft_teal_border: str | None = None
-    soft_teal_text: str | None = None
     space_0: int = 0
     space_1: int = 4
     space_2: int = 8
@@ -130,6 +125,11 @@ DARK_TOKENS = ThemeTokens(
     accent_primary_pressed="#BE123C", accent_primary_disabled="#6B2A3A",
     accent_bright="#FF3B5C", on_accent="#FFFFFF", focus_ring="#FB7185",
     interactive_hover="#202430", interactive_pressed="#292E3D", interactive_selected="#3A111C",
+    tertiary_foreground="#E11D48", tertiary_foreground_hover="#E11D48",
+    tertiary_foreground_pressed="#E11D48", selection_foreground="#E11D48",
+    selection_foreground_hover="#F43F5E", selection_foreground_pressed="#BE123C",
+    selection_surface_hover="#202430", selection_surface_pressed="#292E3D",
+    selection_surface_selected="#3A111C", theme_secondary="#FF7AB6",
     control_background="#151720", control_background_hover="#1A1D28",
     control_background_disabled="#11131A", text_disabled="#66626D",
     dashboard_add_background="#F1F1F1", dashboard_add_border="#E9E9E9",
@@ -144,8 +144,7 @@ DARK_TOKENS = ThemeTokens(
     toggle_track_default="#3A4050", toggle_track_hover="#4A5060",
     toggle_track_pressed="#596071", scrim="#99000000",
     soft_red_background="#3A111C",
-    soft_red_border="#7F1D32", soft_red_text="#FFB3C1", pink_accent="#FF7AB6",
-    pink_background="#321325", pink_text="#FF9DCD",
+    soft_red_border="#7F1D32", soft_red_text="#FFB3C1",
     success=StateColors("#2ED17C", "#0B2A1A", "#86EFAC"),
     warning=StateColors("#F4B740", "#30230A", "#FCD34D"),
     blocker=StateColors("#A78BFA", "#24163F", "#C4B5FD"),
@@ -162,11 +161,12 @@ LIGHT_TOKENS = ThemeTokens(
     text_muted="#918793", accent_primary="#D61F45", accent_primary_hover="#B9143A",
     accent_primary_pressed="#8F1235", accent_primary_disabled="#D8AEB9",
     accent_bright="#FF3B5C", on_accent="#FFFFFF", focus_ring="#7F1D3A",
-    accent_alt="#0F766E", accent_alt_hover="#115E56", accent_alt_pressed="#134E4A",
-    accent_alt_disabled="#BFDBD8", on_accent_alt="#FFFFFF",
     interactive_hover="#FFF1F4", interactive_pressed="#F9DCE4", interactive_selected="#FFE5EC",
-    interactive_hover_alt="#EAF6F4", interactive_pressed_alt="#C7E7E3",
-    interactive_selected_alt="#D3EEEA",
+    tertiary_foreground="#0F766E", tertiary_foreground_hover="#115E56",
+    tertiary_foreground_pressed="#134E4A", selection_foreground="#0F766E",
+    selection_foreground_hover="#115E56", selection_foreground_pressed="#134E4A",
+    selection_surface_hover="#EAF6F4", selection_surface_pressed="#C7E7E3",
+    selection_surface_selected="#D3EEEA", theme_secondary="#0F766E",
     control_background="#FFFFFF", control_background_hover="#FFFAFB",
     control_background_disabled="#F1ECEF", text_disabled="#AAA0A7",
     dashboard_add_background="#F1F1F1", dashboard_add_border="#E9E9E9",
@@ -181,9 +181,7 @@ LIGHT_TOKENS = ThemeTokens(
     toggle_track_default="#D4C8D0", toggle_track_hover="#C1AEBB",
     toggle_track_pressed="#AF98A7", scrim="#99000000",
     soft_red_background="#FFE5EC",
-    soft_red_border="#FFC2D0", soft_red_text="#9F1239", pink_accent="#DB2777",
-    soft_teal_background="#E1F3F1", soft_teal_border="#B8E0DB", soft_teal_text="#0B5D57",
-    pink_background="#FCE7F3", pink_text="#9D174D",
+    soft_red_border="#FFC2D0", soft_red_text="#9F1239",
     success=StateColors("#16A34A", "#DCFCE7", "#166534"),
     warning=StateColors("#D97706", "#FEF3C7", "#92400E"),
     blocker=StateColors("#7C3AED", "#EDE9FE", "#5B21B6"),

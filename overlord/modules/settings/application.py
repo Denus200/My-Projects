@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from overlord.app.unit_of_work import UnitOfWorkFactory
 from overlord.modules.settings.domain import SettingsData
+from overlord.modules.validation import FieldValidationError
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,11 +22,15 @@ class UpdateSettings:
 
     def execute(self, **changes: object) -> SettingsData:
         if "locale" in changes and changes["locale"] not in {"en", "ru"}:
-            raise ValueError("Language must be English or Russian.")
+            raise FieldValidationError("locale", "unsupported", "Language must be English or Russian.")
         if "theme_mode" in changes and changes["theme_mode"] not in {"system", "light", "dark"}:
-            raise ValueError("Theme mode must be System, Light, or Dark.")
+            raise FieldValidationError("theme_mode", "unsupported", "Theme mode must be System, Light, or Dark.")
         if "default_cycle_length" in changes and not 1 <= int(changes["default_cycle_length"]) <= 52:
-            raise ValueError("Default cycle length must be between 1 and 52 weeks.")
+            raise FieldValidationError(
+                "default_cycle_length",
+                "range",
+                "Default cycle length must be between 1 and 52 weeks.",
+            )
         with self.uow_factory() as uow:
             return uow.settings.update(**changes)
 

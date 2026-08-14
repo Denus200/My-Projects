@@ -10,9 +10,9 @@ from overlord.ui.design_system.styles import (
     ButtonVariant,
     button_style,
     checkbox_defaults,
+    chip_control_defaults,
     dropdown_defaults,
     field_defaults,
-    alt_role,
     selection_button_style,
     table_theme,
 )
@@ -107,35 +107,14 @@ def choice_chip(
     motion_enabled: bool = True,
     **kwargs: Any,
 ) -> ft.Chip:
-    duration = tokens.motion_fast if motion_enabled else tokens.motion_none
-    selected_accent = alt_role(tokens, tokens.accent_alt, tokens.accent_primary)
+    defaults = chip_control_defaults(tokens, motion_enabled=motion_enabled)
+    defaults.update(kwargs)
     return ft.Chip(
         label,
         selected=selected,
         on_select=on_select,
         disabled=disabled,
-        bgcolor=tokens.control_background,
-        selected_color=alt_role(tokens, tokens.interactive_selected_alt, tokens.interactive_selected),
-        disabled_color=tokens.control_background_disabled,
-        color={
-            ft.ControlState.DISABLED: tokens.text_disabled,
-            ft.ControlState.SELECTED: selected_accent,
-            ft.ControlState.PRESSED: alt_role(tokens, tokens.accent_alt_pressed, tokens.accent_primary_pressed),
-            ft.ControlState.HOVERED: alt_role(tokens, tokens.accent_alt_hover, tokens.accent_primary_hover),
-            ft.ControlState.FOCUSED: tokens.focus_ring,
-            ft.ControlState.DEFAULT: tokens.text_secondary,
-        },
-        border_side=ft.BorderSide(tokens.border_width, tokens.border_strong),
-        check_color=selected_accent,
-        show_checkmark=True,
-        shape=ft.RoundedRectangleBorder(radius=tokens.radius_pill),
-        padding=ft.Padding.symmetric(horizontal=tokens.space_2, vertical=tokens.space_1),
-        label_text_style=ft.TextStyle(size=tokens.text_small, weight=ft.FontWeight.W_600),
-        elevation=0,
-        elevation_on_click=0,
-        enable_animation_style=ft.AnimationStyle(duration=duration),
-        select_animation_style=ft.AnimationStyle(duration=duration),
-        **kwargs,
+        **defaults,
     )
 
 

@@ -10,6 +10,7 @@ from overlord.app.services import ApplicationServices
 from overlord.modules.projects.read_models import ProjectDetail
 from overlord.modules.projects.domain import Project, ProjectStatus
 from overlord.modules.tasks.domain import Task, TaskLifecycle
+from overlord.modules.validation import FieldValidationError
 from overlord.ui.components.controls import primary_button, search_field, secondary_button, select_field, text_field
 from overlord.ui.components.dialogs import close_dialog, dialog_footer
 from overlord.ui.components.feedback import empty_state, show_success
@@ -171,9 +172,8 @@ def _new_project_dialog(
             project = services.projects.create_project.execute(title.value or "", description.value or "")
             on_created(project)
         except Exception as error:
-            raw = str(error)
             text = ui_error(error)
-            if "title" in raw.lower():
+            if isinstance(error, FieldValidationError) and error.field == "title":
                 title.error = text
                 title.update()
             else:
