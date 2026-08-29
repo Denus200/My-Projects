@@ -17,6 +17,7 @@ Migration `0009_task_day_ordering` creates the table and its day/position index.
 ## Consequences
 
 - Dashboard still owns no Task membership or scheduling data.
+- Blocked and Paused Tasks may be absent from the actionable Dashboard day list while retaining their schedule and stored day position. Reordering the visible subset merges that order around hidden Tasks rather than deleting their presentation metadata.
 - Manual ordering survives re-rendering and application restart.
 - New Tasks without an explicit position are appended after an already customized order.
 - Cross-day dragging remains outside this decision; changing dates continues through Task editing.

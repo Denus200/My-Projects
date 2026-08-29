@@ -3,6 +3,43 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+PROJECT_COLOR_PALETTE = (
+    "#F1ECEF",
+    "#FFC7D2",
+    "#D6F2E7",
+    "#E1D6F7",
+    "#FAE9BD",
+    "#CCEFF3",
+    "#F8DDCB",
+)
+
+# Canonical supplied UI-kit colors that are shared by Projects controls.
+UI_KIT_BLACK = "#000000"
+UI_KIT_SHADOW = "#1A000000"
+UI_KIT_CONTROL_MUTED = "#999999"
+UI_KIT_MENU_ITEM_HOVER = "#F2F2F2"
+UI_KIT_DISABLED_BORDER = "#80000000"
+PROJECT_METRIC_BACKGROUND = "#0A000000"
+PROJECT_METRIC_BORDER = "#29000000"
+PROJECT_CARD_ACTION_BACKGROUND = "#F2F2F2"
+PROJECT_CARD_EMPTY_BACKGROUND = "#F7F7F7"
+PROJECT_CARD_EMPTY_ICON = "#A0A0A0"
+PROJECT_CARD_EMPTY_DASH = "#40000000"
+STATUS_BADGE_COLORS: dict[str, tuple[str, str, str]] = {
+    "active": ("#40BF40", "#E0F5E0", "#39AC39"),
+    "completed": ("#40BF40", "#E0F5E0", "#39AC39"),
+    "inactive": ("#808080", "#EBEBEB", "#808080"),
+    "archived": ("#808080", "#EBEBEB", "#808080"),
+    "planned": ("#808080", "#EBEBEB", "#808080"),
+    "upcoming": ("#808080", "#EBEBEB", "#808080"),
+    "not_completed": ("#BF40AA", "#F5E0F1", "#BF40AA"),
+    "next_checkpoint": ("#7657D6", "#E4DEF7", "#7657D6"),
+    "in_progress": ("#40BFBF", "#E0F5F5", "#40BFBF"),
+    "blocked": ("#BF4040", "#F5E0E0", "#BF4040"),
+    "paused": ("#BF8040", "#F5EBE0", "#BF8040"),
+}
+
+
 @dataclass(frozen=True, slots=True)
 class StateColors:
     main: str
@@ -57,6 +94,42 @@ class ThemeTokens:
     dashboard_completion_fill: str
     dashboard_completion_fill_border: str
     dashboard_completion_check: str
+    dashboard_board_background: str
+    dashboard_board_border: str
+    dashboard_board_divider: str
+    dashboard_weekly_bar_track: str
+    dashboard_weekly_bar_fill: str
+    dashboard_weekly_today: str
+    dashboard_date_chip_background: str
+    dashboard_date_chip_border: str
+    weather_card_background: str
+    weather_card_border: str
+    weather_glass_fill: str
+    weather_glass_border: str
+    weather_tab_active_background: str
+    weather_tab_shadow: str
+    weather_sunny_shadow: str
+    weather_sunny_icon: str
+    weather_sunny_icon_background: str
+    weather_rainy_shadow: str
+    weather_rainy_icon: str
+    weather_rainy_icon_background: str
+    weather_cloudy_shadow: str
+    weather_cloudy_icon: str
+    weather_cloudy_icon_background: str
+    weather_snowy_shadow: str
+    weather_snowy_icon: str
+    weather_snowy_icon_background: str
+    task_card_background: str
+    task_card_border: str
+    task_card_hover_border: str
+    task_card_completed_text: str
+    task_meta_date_background: str
+    task_meta_date_text: str
+    task_meta_deadline_background: str
+    task_meta_deadline_text: str
+    task_meta_cycle_background: str
+    task_meta_cycle_text: str
     profile_trigger_background: str
     profile_trigger_foreground: str
     sidebar_foreground: str
@@ -96,6 +169,7 @@ class ThemeTokens:
     radius_card: int = 14
     radius_large: int = 18
     radius_pill: int = 999
+    task_card_radius: int = 13
     border_width: int = 1
     focus_width: int = 2
     icon_small: int = 16
@@ -138,6 +212,28 @@ DARK_TOKENS = ThemeTokens(
     dashboard_add_disabled_border="#E7E7E7", dashboard_add_disabled_text="#DDDDDD",
     dashboard_completion_border="#3A4050", dashboard_completion_fill="#2ED17C",
     dashboard_completion_fill_border="#238A57", dashboard_completion_check="#D9FFE6",
+    dashboard_board_background="#1A1D28", dashboard_board_border="#3A4050",
+    dashboard_board_divider="#2A2E3A", dashboard_weekly_bar_track="#3A4050",
+    dashboard_weekly_bar_fill="#E11D48", dashboard_weekly_today="#F4B740",
+    dashboard_date_chip_background="#151720",
+    dashboard_date_chip_border="#3A4050",
+    weather_card_background="#1A1D28", weather_card_border="#3A4050",
+    weather_glass_fill="#1AFFFFFF", weather_glass_border="#3DFFFFFF",
+    weather_tab_active_background="#FFFFFF", weather_tab_shadow="#40000000",
+    weather_sunny_shadow="#8D3C07", weather_sunny_icon="#F0A061",
+    weather_sunny_icon_background="#24F0A061",
+    weather_rainy_shadow="#192776", weather_rainy_icon="#8795CA",
+    weather_rainy_icon_background="#248795CA",
+    weather_cloudy_shadow="#415D7C", weather_cloudy_icon="#8297AC",
+    weather_cloudy_icon_background="#248297AC",
+    weather_snowy_shadow="#526A82", weather_snowy_icon="#9BB4C9",
+    weather_snowy_icon_background="#249BB4C9",
+    task_card_background="#151720",
+    task_card_border="#2A2E3A", task_card_hover_border="#E11D48",
+    task_card_completed_text="#66626D", task_meta_date_background="#5B7F24",
+    task_meta_date_text="#FFFFFF", task_meta_deadline_background="#4A1D20",
+    task_meta_deadline_text="#FF9B91", task_meta_cycle_background="#252553",
+    task_meta_cycle_text="#A9A9FF",
     profile_trigger_background="#FFFFFF", profile_trigger_foreground="#000000",
     sidebar_foreground="#F5F3F7", sidebar_border="#2A2E3A",
     sidebar_active_border="#BE123C", sidebar_hover_border="#7F1D32",
@@ -175,6 +271,28 @@ LIGHT_TOKENS = ThemeTokens(
     dashboard_add_disabled_border="#E7E7E7", dashboard_add_disabled_text="#DDDDDD",
     dashboard_completion_border="#DDDDDD", dashboard_completion_fill="#12C933",
     dashboard_completion_fill_border="#47A958", dashboard_completion_check="#D9FFE6",
+    dashboard_board_background="#F7F7F7", dashboard_board_border="#E5DDE2",
+    dashboard_board_divider="#EBEBEB", dashboard_weekly_bar_track="#E7E5E5",
+    dashboard_weekly_bar_fill="#E53A3A", dashboard_weekly_today="#FE4806",
+    dashboard_date_chip_background="#FFFFFF",
+    dashboard_date_chip_border="#EEEEEE",
+    weather_card_background="#F7F7F7", weather_card_border="#E5DDE2",
+    weather_glass_fill="#1AFFFFFF", weather_glass_border="#3DFFFFFF",
+    weather_tab_active_background="#FFFFFF", weather_tab_shadow="#40000000",
+    weather_sunny_shadow="#8D3C07", weather_sunny_icon="#F0A061",
+    weather_sunny_icon_background="#24F0A061",
+    weather_rainy_shadow="#192776", weather_rainy_icon="#8795CA",
+    weather_rainy_icon_background="#248795CA",
+    weather_cloudy_shadow="#415D7C", weather_cloudy_icon="#8297AC",
+    weather_cloudy_icon_background="#248297AC",
+    weather_snowy_shadow="#526A82", weather_snowy_icon="#9BB4C9",
+    weather_snowy_icon_background="#249BB4C9",
+    task_card_background="#FFFFFF",
+    task_card_border="#E9E9E9", task_card_hover_border="#D61F45",
+    task_card_completed_text="#E1E1E1", task_meta_date_background="#5B7F24",
+    task_meta_date_text="#FFFFFF", task_meta_deadline_background="#FFD5D2",
+    task_meta_deadline_text="#C9372C", task_meta_cycle_background="#D2D2FF",
+    task_meta_cycle_text="#2C2CC9",
     profile_trigger_background="#FFFFFF", profile_trigger_foreground="#000000",
     sidebar_foreground="#37303A", sidebar_border="#ECE8EB",
     sidebar_active_border="#BF0F34", sidebar_hover_border="#FFD8E2",

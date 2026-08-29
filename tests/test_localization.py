@@ -123,7 +123,7 @@ class LocalizationTests(unittest.TestCase):
         self.assertEqual("ru", self.services.settings.get_settings.execute().locale)
         self.assertIs(shell, page.controls[0])
         self.assertEqual(1, page.add_count)
-        self.assertIn("Задачи", _texts(shell))
+        self.assertIn("Мои задачи", _texts(shell))
         self.assertIn("Обзор", _texts(shell))
 
     def test_russian_catalog_and_dates_render_immediately(self):

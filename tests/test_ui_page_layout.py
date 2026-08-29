@@ -4,7 +4,7 @@ import unittest
 
 import flet as ft
 
-from overlord.ui.components.layout import page_container, page_header
+from overlord.ui.components.layout import page_container, page_header, workspace_page
 from overlord.ui.design_system.tokens import LIGHT_TOKENS
 
 
@@ -80,6 +80,36 @@ class SharedPageLayoutTests(unittest.TestCase):
         self.assertEqual("projects", control.data["page"])
         self.assertEqual(1, len(_role(control, "page-header")))
         self.assertEqual(1, len(_role(control, "page-content")))
+
+    def test_workspace_page_gives_remaining_space_to_view_host_without_outer_scroll(self):
+        header = ft.Text("Header")
+        toolbar = ft.Text("Toolbar")
+        view_host = ft.Container()
+
+        control = workspace_page(
+            header,
+            toolbar,
+            view_host,
+            LIGHT_TOKENS,
+            page_id="tasks",
+        )
+
+        self.assertIsInstance(control, ft.Container)
+        self.assertTrue(control.expand)
+        self.assertEqual((24, 24, 16, 16), (
+            control.padding.left,
+            control.padding.right,
+            control.padding.top,
+            control.padding.bottom,
+        ))
+        self.assertEqual("workspace-page", control.data["layout"])
+        self.assertEqual("view-host", control.data["scroll_owner"])
+        content = _role(control, "workspace-page-content")[0]
+        self.assertTrue(content.expand)
+        self.assertEqual([header, toolbar, view_host], content.controls)
+        self.assertFalse(header.expand)
+        self.assertFalse(toolbar.expand)
+        self.assertTrue(view_host.expand)
 
 
 if __name__ == "__main__":

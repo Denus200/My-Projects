@@ -4,7 +4,14 @@ from datetime import date
 from typing import Protocol
 
 from overlord.app.read_models import TaskListItem
-from overlord.modules.tasks.domain import Task, TaskLifecycle
+from overlord.modules.tasks.domain import (
+    ChecklistItemDraft,
+    Task,
+    TaskChecklistItem,
+    TaskLifecycle,
+    TaskProjectAssignment,
+    TaskProjectLink,
+)
 from overlord.modules.tasks.read_models import StatusHistoryEntry
 
 
@@ -17,3 +24,16 @@ class TaskRepositoryPort(Protocol):
     def status_history(self, task_id: int) -> list[StatusHistoryEntry]: ...
     def day_positions(self, day: date) -> dict[int, int]: ...
     def replace_day_order(self, day: date, task_ids: tuple[int, ...]) -> None: ...
+    def project_links(self, task_id: int) -> tuple[TaskProjectLink, ...]: ...
+    def replace_project_links(
+        self,
+        task_id: int,
+        assignments: tuple[TaskProjectAssignment, ...],
+    ) -> tuple[TaskProjectLink, ...]: ...
+    def checklist_items(self, task_id: int) -> tuple[TaskChecklistItem, ...]: ...
+    def replace_checklist(
+        self,
+        task_id: int,
+        items: tuple[ChecklistItemDraft, ...],
+    ) -> tuple[TaskChecklistItem, ...]: ...
+    def delete(self, task_id: int) -> None: ...

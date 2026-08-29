@@ -42,6 +42,14 @@ class Cycle:
     completed_at: datetime | None = None
     archived_at: datetime | None = None
 
+    def current_week(self, as_of: date) -> int | None:
+        """Return the canonical active week, or None outside an active Cycle."""
+        if self.status is not CycleStatus.ACTIVE:
+            return None
+        if not self.start_date <= as_of <= self.end_date:
+            return None
+        return min(self.length_weeks, (as_of - self.start_date).days // 7 + 1)
+
 
 @dataclass(frozen=True, slots=True)
 class Milestone:

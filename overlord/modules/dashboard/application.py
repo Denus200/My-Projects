@@ -21,6 +21,13 @@ def _week_start(value: date, first_day: int = 0) -> date:
     return value.fromordinal(value.toordinal() - ((value.weekday() - first_day) % 7))
 
 
+def _is_visible_in_dashboard_day_list(item: TaskListItem) -> bool:
+    lifecycle = item.task.lifecycle_status
+    if lifecycle is TaskLifecycle.COMPLETED:
+        return True
+    return lifecycle in {TaskLifecycle.PLANNED, TaskLifecycle.IN_PROGRESS} and not item.open_blockers
+
+
 @dataclass(frozen=True, slots=True)
 class GetDashboardQuery:
     uow_factory: UnitOfWorkFactory
@@ -42,7 +49,7 @@ class GetDashboardQuery:
                     tuple(
                         item
                         for item in all_tasks
-                        if item.task.lifecycle_status is not TaskLifecycle.CANCELLED
+                        if _is_visible_in_dashboard_day_list(item)
                         and is_scheduled_for_day(item.task, current_day)
                     ),
                     uow.tasks.day_positions(current_day),
@@ -51,6 +58,7 @@ class GetDashboardQuery:
             )
             weekly_bars = tuple(WeeklyBar(*values) for values in uow.dashboard.weekly_counts(start))
             originally_planned, completed = uow.dashboard.execution_counts(start)
+            active_time_minutes, total_time_minutes = uow.dashboard.weekly_time_totals(start)
             attention: list[AttentionItem] = []
             for item in all_tasks:
                 task = item.task
@@ -99,4 +107,6 @@ class GetDashboardQuery:
             current_cycle=cycle_model,
             attention=tuple(attention),
             outcome_label=outcome_label,
+            active_time_minutes=active_time_minutes,
+            total_time_minutes=total_time_minutes,
         )

@@ -8,7 +8,14 @@ from pathlib import Path
 from overlord.bootstrap import bootstrap
 from overlord.modules.blockers.domain import BlockerType
 from overlord.modules.cycles.domain import CycleStatus, cycle_end_date
-from overlord.modules.tasks.domain import TaskBoardColumn, TaskLifecycle, board_column
+from overlord.modules.tasks.domain import (
+    ChecklistItemDraft,
+    TaskBoardColumn,
+    TaskCreationMode,
+    TaskLifecycle,
+    TaskProjectAssignment,
+    board_column,
+)
 
 
 TEST_TEMP_ROOT = Path(__file__).resolve().parents[1] / "data" / "test-tmp"
@@ -39,6 +46,72 @@ class FoundationApplicationTests(unittest.TestCase):
             self.services.tasks.create_task.execute(
                 self.project.id, "Invalid estimate", estimate_minutes=0
             )
+
+    def test_create_task_persists_draft_projects_stages_and_nested_checklist_atomically(self):
+        second = self.services.projects.create_project.execute("Second")
+        plan = self.services.projects.create_plan.execute(self.project.id, "Current")
+        stage = self.services.projects.create_stage.execute(self.project.id, plan.id, "Build")
+        task = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Atomic Create Task",
+            creation_mode=TaskCreationMode.DRAFT,
+            project_links=(
+                TaskProjectAssignment(self.project.id, stage.id),
+                TaskProjectAssignment(second.id),
+            ),
+            checklist_items=(
+                ChecklistItemDraft(
+                    "Root",
+                    False,
+                    (ChecklistItemDraft("Child", True),),
+                ),
+            ),
+        )
+        self.assertEqual(TaskCreationMode.DRAFT, task.creation_mode)
+        self.assertEqual((self.project.id, second.id), tuple(link.project_id for link in task.project_links))
+        self.assertEqual(stage.id, task.project_links[0].stage_id)
+        self.assertEqual(("Root", "Child"), tuple(item.title for item in task.checklist_items))
+        self.assertEqual(0.5, task.checklist_progress)
+
+    def test_create_task_rolls_back_task_when_checklist_insert_fails(self):
+        with closing(sqlite3.connect(self.path)) as connection:
+            connection.execute(
+                "CREATE TRIGGER reject_checklist BEFORE INSERT ON task_checklist_items "
+                "BEGIN SELECT RAISE(ABORT, 'test checklist failure'); END"
+            )
+            connection.commit()
+        before = self.services.tasks.list_tasks.execute(include_drafts=True)
+        with self.assertRaises(sqlite3.IntegrityError):
+            self.services.tasks.create_task.execute(
+                None,
+                "Must roll back",
+                checklist_items=(ChecklistItemDraft("Rejected"),),
+            )
+        self.assertEqual(before, self.services.tasks.list_tasks.execute(include_drafts=True))
+
+    def test_draft_is_excluded_from_normal_task_dashboard_and_project_views(self):
+        today = date.today()
+        draft = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Hidden draft",
+            schedule_start_date=today,
+            estimate_minutes=30,
+            creation_mode=TaskCreationMode.DRAFT,
+        )
+        self.assertEqual((), self.services.tasks.list_tasks.execute())
+        self.assertEqual(
+            (draft.id,),
+            tuple(
+                item.task.id
+                for item in self.services.tasks.list_tasks.execute(
+                    creation_mode=TaskCreationMode.DRAFT
+                )
+            ),
+        )
+        self.assertFalse(self.services.dashboard.execute(today).today_tasks)
+        detail = self.services.projects.get_detail.execute(self.project.id)
+        self.assertEqual(0, detail.eligible_task_count)
+        self.assertEqual(0, detail.estimated_minutes)
 
     def test_standalone_task_is_backlog_without_a_plan(self):
         task = self.services.tasks.create_task.execute(None, "  Replace hallway bulb  ")
@@ -167,6 +240,45 @@ class FoundationApplicationTests(unittest.TestCase):
         dashboard = self.services.dashboard.execute(date.today())
         self.assertEqual(1.0, dashboard.execution_score)
         self.assertEqual("Not tracked yet", dashboard.actual_time_label)
+        self.assertIsNone(dashboard.active_time_minutes)
+        self.assertIsNone(dashboard.total_time_minutes)
+
+    def test_dashboard_aggregates_active_and_total_time_separately_for_selected_week(self):
+        selected_day = date(2026, 8, 13)
+        first = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Measured one",
+            schedule_start_date=date(2026, 8, 10),
+        )
+        second = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Measured two",
+            schedule_start_date=date(2026, 8, 16),
+        )
+        outside = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Next week",
+            schedule_start_date=date(2026, 8, 17),
+        )
+        self.services.tasks.complete_task.execute(
+            first.id,
+            active_time_minutes=120,
+            total_time_minutes=180,
+        )
+        self.services.tasks.complete_task.execute(
+            second.id,
+            active_time_minutes=30,
+            total_time_minutes=90,
+        )
+        self.services.tasks.complete_task.execute(
+            outside.id,
+            active_time_minutes=999,
+            total_time_minutes=999,
+        )
+
+        dashboard = self.services.dashboard.execute(selected_day)
+        self.assertEqual(150, dashboard.active_time_minutes)
+        self.assertEqual(270, dashboard.total_time_minutes)
 
     def test_board_columns_are_derived_from_schedule_and_completion(self):
         reference = datetime(2026, 8, 13, 12, 0)

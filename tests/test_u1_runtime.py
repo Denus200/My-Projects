@@ -214,6 +214,57 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual(1, page.add_count)
         self.assertIs(shell, page.controls[0])
 
+    def test_tasks_workspace_stays_mounted_through_resize_restore_and_sidebar_toggle(self):
+        page = FakePage("/tasks")
+        page.width = 1280
+        page.height = 720
+        app = OverlordApp(page, self.services, loading_delay_seconds=0.05)
+        app.mount()
+
+        shell = page.controls[0]
+        workspace = app._shell.content_host.content
+        view_host = _role(workspace, "task-view-host")
+        self.assertEqual(232, app._shell.sidebar.control.width)
+        self.assertEqual("workspace-page", workspace.data["layout"])
+        self.assertTrue(workspace.expand)
+        self.assertTrue(view_host.expand)
+        self.assertIsNone(view_host.width)
+        self.assertIsNone(view_host.height)
+
+        for width, height in ((1600, 900), (1920, 1080), (1280, 720)):
+            page.width = width
+            page.height = height
+            page.on_resize(None)
+            self.assertIs(workspace, app._shell.content_host.content)
+            self.assertIs(view_host, _role(workspace, "task-view-host"))
+            self.assertEqual(1, page.add_count)
+            self.assertEqual("/tasks", app.state.route)
+
+        app.toggle_sidebar(None)
+        self.assertEqual(56, app._shell.sidebar.control.width)
+        self.assertIs(workspace, app._shell.content_host.content)
+        self.assertIs(view_host, _role(workspace, "task-view-host"))
+        self.assertIs(shell, page.controls[0])
+
+        for mode in ("week", "month", "kanban"):
+            tab = next(
+                control
+                for control in _walk(workspace)
+                if isinstance(getattr(control, "data", None), dict)
+                and control.data.get("role") == "segmented-tab"
+                and control.data.get("tab") == mode
+            )
+            with patch.object(ft.Control, "update", lambda _control: None):
+                tab.on_click(None)
+            self.assertIs(view_host, _role(workspace, "task-view-host"))
+            self.assertEqual(mode, app.state.task_view_mode)
+
+        app.toggle_sidebar(None)
+        self.assertEqual(232, app._shell.sidebar.control.width)
+        self.assertIs(workspace, app._shell.content_host.content)
+        self.assertIs(view_host, _role(workspace, "task-view-host"))
+        self.assertEqual(1, page.add_count)
+
     def test_root_route_resolves_to_dashboard_without_rebuilding_shell(self):
         page = FakePage("/tasks")
         app = OverlordApp(page, self.services, loading_delay_seconds=0.05)
@@ -227,23 +278,25 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual(1, page.add_count)
         self.assertIs(shell, page.controls[0])
 
-    def test_dashboard_weekly_placement_is_static_across_navigation_and_language_rebuilds(self):
+    def test_dashboard_top_row_contract_survives_navigation_and_language_rebuilds(self):
         page, app = self._app()
 
-        def placement() -> tuple[type, list[str], object, object]:
+        def placement() -> tuple[type, list[str], object, object, object]:
             row = _role(page.controls[0], "first-bento-row")
             return (
                 type(row),
                 [item.data["role"] for item in row.controls],
-                row.controls[0].col,
-                row.controls[1].col,
+                row.spacing,
+                row.height,
+                row.controls[1].width,
             )
 
         expected = (
-            ft.ResponsiveRow,
+            ft.Row,
             ["three-day-task-board", "weekly-progress-widget"],
-            {"sm": 12, "xxl": 9},
-            {"sm": 12, "xxl": 3},
+            16,
+            433,
+            None,
         )
         self.assertEqual(expected, placement())
         asyncio.run(app.transition_to("/tasks"))
@@ -363,7 +416,7 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual("/tasks", app.state.route)
         self.assertEqual("/tasks", app.last_route_timing.requested_route)
         self.assertIs(shell, page.controls[0])
-        self.assertIn("Tasks", _text_values(app._shell.content_host.content))
+        self.assertIn("My Tasks", _text_values(app._shell.content_host.content))
 
     def test_rapid_route_switching_commits_only_the_latest_request(self):
         page, app = self._app(loading_delay=0.2)
@@ -400,7 +453,7 @@ class U1RuntimeTests(unittest.TestCase):
         self.assertEqual("/tasks", app.state.route)
         self.assertEqual("/tasks", app.last_route_timing.requested_route)
         self.assertFalse(app._shell.loading_indicator.visible)
-        self.assertIn("Tasks", _text_values(app._shell.content_host.content))
+        self.assertIn("My Tasks", _text_values(app._shell.content_host.content))
         self.assertIs(shell, page.controls[0])
 
 

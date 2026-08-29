@@ -41,6 +41,12 @@ class AppShellTests(unittest.TestCase):
         )
         shell.set_content(global_page)
         self.assertEqual(0, shell.body.padding)
+        workspace_page = ft.Container(
+            expand=True,
+            data={"role": "workspace-page-container", "layout": "workspace-page", "page": "tasks"},
+        )
+        shell.set_content(workspace_page)
+        self.assertEqual(0, shell.body.padding)
         shell.set_content(second)
         self.assertEqual(24, shell.body.padding)
         self.assertIs(root, shell.control)

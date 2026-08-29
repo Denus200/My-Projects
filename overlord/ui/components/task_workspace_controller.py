@@ -9,10 +9,12 @@ from overlord.app.services import ApplicationServices
 from overlord.modules.projects.domain import Project
 from overlord.modules.tasks.domain import TaskBoardColumn, board_column
 from overlord.ui.components.task_workspace_model import (
+    expanded_board_column_order,
     merged_today_order,
     month_shift,
     moved_card_orders,
     normalized_column_order,
+    normalized_kanban_column_order,
     normalized_view_mode,
     parse_calendar_anchor,
     reconcile_card_order,
@@ -54,6 +56,8 @@ class TaskWorkspaceController:
 
     def initialize_view(self) -> None:
         self.state.view_mode = normalized_view_mode(self.state.view_mode)
+        if self.state.expanded_date_navigation != self.state.view_mode:
+            self.state.expanded_date_navigation = None
         self.anchor = parse_calendar_anchor(self.state.calendar_anchor, self.today)
 
     @property
@@ -73,6 +77,9 @@ class TaskWorkspaceController:
         self.filters.search = search
         self.filters.project = project
         return self.services.tasks.list_tasks.execute(**task_query_filters(search, project))
+
+    def all_items(self) -> tuple[TaskListItem, ...]:
+        return self.services.tasks.list_tasks.execute()
 
     def task_committed(
         self,
@@ -117,6 +124,46 @@ class TaskWorkspaceController:
 
     def normalize_column_order(self) -> None:
         self.state.column_order[:] = normalized_column_order(self.state.column_order)
+
+    def initialize_card_orders(
+        self,
+        grouped: dict[TaskBoardColumn, tuple[TaskListItem, ...]],
+    ) -> None:
+        """Reconcile against all Tasks before filters project visible subsets."""
+        for column in TaskBoardColumn:
+            self.ordered_items(column, grouped[column])
+
+    def projected_items(
+        self,
+        items: tuple[TaskListItem, ...],
+    ) -> tuple[TaskListItem, ...]:
+        input_position = {item.task.id: position for position, item in enumerate(items)}
+        column_position = {
+            value: position for position, value in enumerate(self.state.column_order)
+        }
+
+        def ordering_key(item: TaskListItem) -> tuple[int, int, int]:
+            source = board_column(item.task)
+            ordered_ids = self.state.card_order.get(source.value, [])
+            try:
+                card_position = ordered_ids.index(item.task.id)
+            except ValueError:
+                card_position = len(ordered_ids) + input_position[item.task.id]
+            return (
+                column_position.get(source.value, len(column_position)),
+                card_position,
+                input_position[item.task.id],
+            )
+
+        return tuple(sorted(items, key=ordering_key))
+
+    def reorder_kanban_column(self, source: str, target: str) -> bool:
+        current = normalized_kanban_column_order(self.state.column_order)
+        reordered = reordered_columns(current, source, target)
+        if reordered == current:
+            return False
+        self.state.column_order[:] = expanded_board_column_order(reordered)
+        return True
 
     def reorder_column(self, source: TaskBoardColumn, target: TaskBoardColumn) -> bool:
         reordered = reordered_columns(self.state.column_order, source.value, target.value)
@@ -171,7 +218,18 @@ class TaskWorkspaceController:
             self.ordering.persist_for_day(self.today, ordered_ids)
 
     def switch_mode(self, mode: str) -> None:
-        self.state.view_mode = mode
+        normalized = normalized_view_mode(mode)
+        if normalized != self.state.view_mode:
+            self.state.expanded_date_navigation = None
+        self.state.view_mode = normalized
+
+    def toggle_date_navigation(self, mode: str) -> None:
+        if mode not in {"week", "month"} or mode != self.state.view_mode:
+            self.state.expanded_date_navigation = None
+            return
+        self.state.expanded_date_navigation = (
+            None if self.state.expanded_date_navigation == mode else mode
+        )
 
     def move_calendar(self, offset: int) -> None:
         assert self.anchor is not None

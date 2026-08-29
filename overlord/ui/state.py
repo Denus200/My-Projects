@@ -19,6 +19,7 @@ class TaskWorkspaceState:
     filters: TaskFilterState | None = None
     view_mode: str = "kanban"
     calendar_anchor: str | None = None
+    expanded_date_navigation: str | None = None
     column_order: list[str] = field(
         default_factory=lambda: ["planned", "in_progress", "missed", "completed", "archive"]
     )
@@ -29,6 +30,10 @@ class TaskWorkspaceState:
 class ProjectFilterState:
     search: str = ""
     status: str = "all"
+    favorite_only: bool = False
+    sort: str = "recent"
+    selected_project_ids: set[int] = field(default_factory=set)
+    selected_statuses: set[str] = field(default_factory=set)
 
 
 @dataclass(slots=True)
@@ -81,6 +86,7 @@ class AppSessionState:
         task_filters: TaskFilterState | None = None,
         task_view_mode: str = "kanban",
         task_calendar_anchor: str | None = None,
+        task_expanded_date_navigation: str | None = None,
         task_column_order: list[str] | None = None,
         task_card_order: dict[str, list[int]] | None = None,
         project_filters: ProjectFilterState | None = None,
@@ -102,6 +108,7 @@ class AppSessionState:
             filters=task_filters,
             view_mode=task_view_mode,
             calendar_anchor=task_calendar_anchor,
+            expanded_date_navigation=task_expanded_date_navigation,
             column_order=(
                 task_column_order
                 if task_column_order is not None
@@ -145,6 +152,14 @@ class AppSessionState:
     @task_calendar_anchor.setter
     def task_calendar_anchor(self, value: str | None) -> None:
         self.task_workspace.calendar_anchor = value
+
+    @property
+    def task_expanded_date_navigation(self) -> str | None:
+        return self.task_workspace.expanded_date_navigation
+
+    @task_expanded_date_navigation.setter
+    def task_expanded_date_navigation(self, value: str | None) -> None:
+        self.task_workspace.expanded_date_navigation = value
 
     @property
     def task_column_order(self) -> list[str]:

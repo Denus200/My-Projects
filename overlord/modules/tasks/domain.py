@@ -11,6 +11,29 @@ class TaskLifecycle(StrEnum):
     BACKLOG = "backlog"
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class TaskCreationMode(StrEnum):
+    """How a new Task becomes available to the normal workflow."""
+
+    NORMAL = "normal"
+    DRAFT = "draft"
+
+
+class TaskDetailsStatus(StrEnum):
+    """Editable status shown by Task Details.
+
+    Blocked remains derived from open Blockers rather than being persisted in
+    ``tasks.lifecycle_status``.
+    """
+
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    BLOCKED = "blocked"
+    PAUSED = "paused"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
@@ -21,6 +44,38 @@ class TaskBoardColumn(StrEnum):
     MISSED = "missed"
     COMPLETED = "completed"
     ARCHIVE = "archive"
+
+
+@dataclass(frozen=True, slots=True)
+class TaskProjectAssignment:
+    project_id: int
+    stage_id: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TaskProjectLink:
+    task_id: int
+    project_id: int
+    stage_id: int | None
+    position: int
+
+
+@dataclass(frozen=True, slots=True)
+class ChecklistItemDraft:
+    title: str
+    completed: bool = False
+    children: tuple["ChecklistItemDraft", ...] = ()
+    item_id: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TaskChecklistItem:
+    id: int
+    task_id: int
+    parent_item_id: int | None
+    title: str
+    completed: bool
+    position: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,6 +94,8 @@ class Task:
     importance: bool | None = None
     urgency: bool | None = None
     estimate_minutes: int | None = None
+    total_time_minutes: int | None = None
+    active_time_minutes: int | None = None
     schedule_start_date: date | None = None
     schedule_start_time: time | None = None
     schedule_end_date: date | None = None
@@ -47,6 +104,15 @@ class Task:
     started_at: datetime | None = None
     completed_at: datetime | None = None
     archived_at: datetime | None = None
+    project_links: tuple[TaskProjectLink, ...] = ()
+    creation_mode: TaskCreationMode = TaskCreationMode.NORMAL
+    checklist_items: tuple[TaskChecklistItem, ...] = ()
+
+    @property
+    def checklist_progress(self) -> float | None:
+        if not self.checklist_items:
+            return None
+        return sum(item.completed for item in self.checklist_items) / len(self.checklist_items)
 
 
 def require_task_title(title: str) -> str:
@@ -60,6 +126,36 @@ def validate_estimate(minutes: int | None) -> int | None:
     if minutes is not None and minutes <= 0:
         raise FieldValidationError("estimate", "positive", "Estimate must be a positive number of minutes.")
     return minutes
+
+
+def validate_completion_duration(minutes: int | None, *, field: str, label: str) -> int | None:
+    if minutes is not None and minutes <= 0:
+        raise FieldValidationError(field, "positive", f"{label} must be a positive number of minutes.")
+    return minutes
+
+
+def validate_checklist(items: tuple[ChecklistItemDraft, ...]) -> tuple[ChecklistItemDraft, ...]:
+    item_ids: list[int] = []
+
+    def validate_item(item: ChecklistItemDraft) -> ChecklistItemDraft:
+        title = item.title.strip()
+        if not title:
+            raise FieldValidationError("checklist", "title_required", "Checklist item title is required.")
+        if item.item_id is not None:
+            if item.item_id <= 0:
+                raise FieldValidationError("checklist", "invalid_item_id", "Checklist item ID is invalid.")
+            item_ids.append(item.item_id)
+        return ChecklistItemDraft(
+            title,
+            bool(item.completed),
+            tuple(validate_item(child) for child in item.children),
+            item.item_id,
+        )
+
+    validated = tuple(validate_item(item) for item in items)
+    if len(item_ids) != len(set(item_ids)):
+        raise FieldValidationError("checklist", "duplicate_item_id", "Checklist item IDs must be unique.")
+    return validated
 
 
 def validate_schedule(
@@ -86,6 +182,20 @@ def validate_schedule(
         start_at = datetime.combine(start_date, start_time or time.min)
         if deadline_at < start_at:
             raise FieldValidationError("deadline", "before_start", "The deadline cannot be before the task starts.")
+
+
+def task_details_status(task: Task, *, has_open_blockers: bool = False) -> TaskDetailsStatus:
+    if task.lifecycle_status is TaskLifecycle.COMPLETED:
+        return TaskDetailsStatus.COMPLETED
+    if task.lifecycle_status is TaskLifecycle.CANCELLED:
+        return TaskDetailsStatus.CANCELLED
+    if has_open_blockers:
+        return TaskDetailsStatus.BLOCKED
+    if task.lifecycle_status is TaskLifecycle.IN_PROGRESS:
+        return TaskDetailsStatus.IN_PROGRESS
+    if task.lifecycle_status is TaskLifecycle.PAUSED:
+        return TaskDetailsStatus.PAUSED
+    return TaskDetailsStatus.PLANNED
 
 
 def is_scheduled_for_day(task: Task, day: date) -> bool:

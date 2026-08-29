@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 import hashlib
 import json
+import shutil
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
@@ -11,12 +12,12 @@ from time import perf_counter
 from overlord.bootstrap import DEFAULT_DATABASE_PATH, REPOSITORY_ROOT, bootstrap
 from overlord.modules.blockers.domain import BlockerType
 from overlord.modules.cycles.domain import CycleStatus, WeeklyOutcomeStatus
-from overlord.modules.projects.domain import ProjectStatus
-from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.modules.projects.domain import ProjectPlanStatus, ProjectStageStatus, ProjectStatus
+from overlord.modules.tasks.domain import TaskLifecycle, TaskProjectAssignment
 
 
 DEMO_DATABASE_PATH = REPOSITORY_ROOT / "data" / "demo" / "overlord_demo.db"
-DEMO_SEED_VERSION = 5
+DEMO_SEED_VERSION = 6
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +47,9 @@ def _remove_demo_files(database_path: Path) -> None:
     manifest = _seed_manifest_path(database_path)
     if manifest.exists():
         manifest.unlink()
+    workspace_root = database_path.parent / "project-workspaces"
+    if workspace_root.exists():
+        shutil.rmtree(workspace_root)
 
 
 def _seed_manifest_path(database_path: Path) -> Path:
@@ -133,16 +137,16 @@ def seed_demo_database(
     services = bootstrap(target).services
     projects = {}
     project_specs = (
-        ("Portfolio Refresh", "Evidence-backed case studies and portfolio polish.", "Case-study production"),
-        ("Confident English", "Practice clear spoken explanations for interviews.", "Weekly speaking practice"),
-        ("Overlord", "Build a calmer personal execution system.", "Foundation UX redesign"),
-        ("Home", "Small recurring household responsibilities.", "Weekly reset"),
-        ("Health Admin", "Collect appointments and health paperwork without forcing a false plan.", "Not started"),
-        ("Website Launch", "A completed outcome retained for progress and history review.", "Released"),
-        ("Old Job Search", "An archived context kept available without competing for attention.", "Archived"),
+        ("Portfolio Refresh", "Evidence-backed case studies and portfolio polish.", "Case-study production", "#FAE9BD", True),
+        ("Confident English", "Practice clear spoken explanations for interviews.", "Weekly speaking practice", "#D6F2E7", False),
+        ("Overlord", "Build a calmer personal execution system.", "Foundation UX redesign", "#FFC7D2", True),
+        ("Home", "Small recurring household responsibilities.", "Weekly reset", "#CCEFF3", False),
+        ("Health Admin", "Collect appointments and health paperwork without forcing a false plan.", "Not started", "#E1D6F7", False),
+        ("Website Launch", "A completed outcome retained for progress and history review.", "Released", "#D6F2E7", False),
+        ("Old Job Search", "An archived context kept available without competing for attention.", "Archived", "#F1ECEF", False),
     )
-    for title, description, stage in project_specs:
-        project = services.projects.create_project.execute(title, description)
+    for title, description, stage, color, favorite in project_specs:
+        project = services.projects.create_project.execute(title, description, color=color, favorite=favorite)
         projects[title] = services.projects.update_project.execute(project.id, stage_label=stage)
     projects["Website Launch"] = services.projects.update_project.execute(
         projects["Website Launch"].id,
@@ -152,6 +156,37 @@ def seed_demo_database(
         projects["Old Job Search"].id,
         status=ProjectStatus.ARCHIVED,
     )
+
+    overlord_plan = services.projects.create_plan.execute(projects["Overlord"].id, "Foundation UX Improvements")
+    overlord_stages = [
+        services.projects.create_stage.execute(projects["Overlord"].id, overlord_plan.id, title)
+        for title in ("Collect feedback", "Prioritize issues", "Design updates", "Validation")
+    ]
+    services.projects.change_stage_status.execute(overlord_stages[0].id, ProjectStageStatus.COMPLETED)
+    services.projects.change_stage_status.execute(overlord_stages[1].id, ProjectStageStatus.COMPLETED)
+    services.projects.change_stage_status.execute(overlord_stages[2].id, ProjectStageStatus.IN_PROGRESS)
+    portfolio_plan = services.projects.create_plan.execute(projects["Portfolio Refresh"].id, "Portfolio Evidence Refresh")
+    portfolio_stages = [
+        services.projects.create_stage.execute(projects["Portfolio Refresh"].id, portfolio_plan.id, title)
+        for title in ("Evidence review", "Publish case studies")
+    ]
+    services.projects.change_stage_status.execute(portfolio_stages[0].id, ProjectStageStatus.IN_PROGRESS)
+    home_plan = services.projects.create_plan.execute(projects["Home"].id, "Home Reset")
+    completed_plan = services.projects.create_plan.execute(projects["Website Launch"].id, "Website Launch Plan")
+    services.projects.change_plan_status.execute(completed_plan.id, ProjectPlanStatus.COMPLETED)
+    archived_plan = services.projects.create_plan.execute(projects["Old Job Search"].id, "Job Search Plan")
+    services.projects.change_plan_status.execute(archived_plan.id, ProjectPlanStatus.ARCHIVED)
+    services.projects.create_note.execute(
+        projects["Overlord"].id,
+        "Testing summary",
+        "# Testing Summary\n\n## Session Overview\n\n- Reviewed onboarding flows\n- Captured usability findings\n- Prioritized the next design updates",
+    )
+    demo_file_source = target.parent / "project-file-sample.txt"
+    demo_file_source.write_text("Deterministic local Project file used for native visual QA.\n", encoding="utf-8")
+    try:
+        services.projects.add_file.execute(projects["Overlord"].id, demo_file_source)
+    finally:
+        demo_file_source.unlink(missing_ok=True)
 
     week_start = selected_day - timedelta(days=selected_day.weekday())
     cycle_start = week_start - timedelta(weeks=2)
@@ -293,6 +328,15 @@ def seed_demo_database(
         lifecycle=TaskLifecycle.IN_PROGRESS,
         connect_to_cycle=True,
     )
+    services.tasks.update_task.execute(
+        primary_one.id,
+        project_links=(
+            TaskProjectAssignment(projects["Portfolio Refresh"].id, portfolio_stages[0].id),
+            TaskProjectAssignment(projects["Overlord"].id, overlord_stages[2].id),
+            TaskProjectAssignment(projects["Confident English"].id),
+            TaskProjectAssignment(projects["Home"].id),
+        ),
+    )
     services.tasks.open_blocker.execute(
         primary_one.id,
         BlockerType.DEPENDENCY,
@@ -322,7 +366,11 @@ def seed_demo_database(
         estimate=30,
     )
 
-    create_task("Overlord", "Save Dashboard references", selected_day, next_action="Save the approved Bento and task-row references.", estimate=10)
+    reference_task = create_task("Overlord", "Save Dashboard references", selected_day, next_action="Save the approved Bento and task-row references.", estimate=10)
+    services.tasks.update_task.execute(
+        reference_task.id,
+        project_links=(TaskProjectAssignment(projects["Overlord"].id, overlord_stages[0].id),),
+    )
     create_task("Portfolio Refresh", "Reply to a recruiter", selected_day, next_action="Confirm availability for a short call.", urgency=True, estimate=15)
     create_task("Portfolio Refresh", "Update LinkedIn headline", selected_day, next_action="Draft one outcome-focused headline.", importance=True, estimate=15, connect_to_cycle=True)
     create_task("Home", "Replace cat litter", selected_day, definition_of_done="Litter is replaced and the area is cleaned.", estimate=10, lifecycle=TaskLifecycle.COMPLETED)
@@ -364,6 +412,10 @@ def seed_demo_database(
         definition_of_done="The checklist has one clear owner and completion criterion per step.",
         importance=True,
         lifecycle=TaskLifecycle.IN_PROGRESS,
+    )
+    services.tasks.update_task.execute(
+        no_next_action.id,
+        project_links=(TaskProjectAssignment(projects["Overlord"].id, overlord_stages[1].id),),
     )
 
     weekly_pattern = {
@@ -462,7 +514,7 @@ def demo_seed_fingerprint(database_path: str | Path = DEMO_DATABASE_PATH) -> str
     """Hash stable demo semantics while excluding intentionally volatile timestamps."""
     target = _safe_demo_target(database_path)
     queries = (
-        ("projects", "SELECT id,title,status,description,stage_label FROM projects ORDER BY id"),
+        ("projects", "SELECT id,title,status,description,stage_label,color,favorite FROM projects ORDER BY id"),
         (
             "tasks",
             """SELECT id,project_id,title,lifecycle_status,definition_of_done,next_action,
@@ -486,6 +538,11 @@ def demo_seed_fingerprint(database_path: str | Path = DEMO_DATABASE_PATH) -> str
             "SELECT id,cycle_id,week_number,title,definition_of_done,status FROM weekly_outcomes ORDER BY id",
         ),
         ("cycle_projects", "SELECT cycle_id,project_id,position FROM cycle_projects ORDER BY cycle_id,project_id"),
+        ("project_plans", "SELECT id,project_id,title,status FROM project_plans ORDER BY id"),
+        ("project_stages", "SELECT id,project_plan_id,project_id,title,status,position,start_date,end_date FROM project_stages ORDER BY id"),
+        ("task_project_links", "SELECT task_id,project_id,stage_id,position FROM task_project_links ORDER BY task_id,position"),
+        ("project_notes", "SELECT id,project_id,title,relative_path FROM project_notes ORDER BY id"),
+        ("project_files", "SELECT id,project_id,display_name,relative_path,size_bytes FROM project_files ORDER BY id"),
         ("cycle_tasks", "SELECT cycle_id,task_id,CASE WHEN disconnected_at IS NULL THEN 0 ELSE 1 END FROM cycle_tasks ORDER BY cycle_id,task_id"),
         ("cycle_milestones", "SELECT cycle_id,milestone_id,position FROM cycle_milestones ORDER BY cycle_id,milestone_id"),
         ("blockers", "SELECT id,task_id,type,description,resolution,CASE WHEN resolved_at IS NULL THEN 0 ELSE 1 END FROM blockers ORDER BY id"),

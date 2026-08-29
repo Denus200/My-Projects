@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
+from typing import Callable
 from urllib.parse import parse_qs, urlparse
 
 import flet as ft
@@ -9,18 +10,25 @@ from overlord.app.read_models import TaskListItem
 from overlord.app.services import ApplicationServices
 from overlord.modules.dashboard.read_models import DashboardReadModel
 from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.ui.components.complete_task import show_complete_task_dialog
 from overlord.ui.components.controls import primary_button
 from overlord.ui.components.feedback import empty_state
 from overlord.ui.components.layout import card, page_container
-from overlord.ui.components.reorder import drag_payload, draggable_task_handle
+from overlord.ui.components.reorder import drag_payload
+from overlord.ui.components.task_card import (
+    TaskCardVariant,
+    task_card,
+    task_meta_chips_for_item,
+)
 from overlord.ui.components.task_ordering import TaskOrderController
 from overlord.ui.components.task_details import build_task_details_dialog
 from overlord.ui.components.tasks import build_quick_task_dialog
+from overlord.ui.components.weather import build_weather_widget
 from overlord.ui.design_system.icons import IconName, lucide_icon
 from overlord.ui.design_system.tokens import ThemeTokens
 from overlord.ui.strings import (
     format_dashboard_date,
-    format_weekday_initial,
+    format_dashboard_week_range,
     format_weekday_name,
     ui_error,
     ui_text,
@@ -53,204 +61,193 @@ def _selected_date(route: str) -> date:
         return date.today()
 
 
-def _dashboard_task_card(
-    item: TaskListItem,
+def _format_weekly_duration(minutes: int | None) -> str:
+    if minutes is None:
+        return ui_text("common.not_tracked_yet")
+    hours, remainder = divmod(minutes, 60)
+    if hours and remainder:
+        return ui_text("dashboard.duration.hours_minutes", hours=hours, minutes=remainder)
+    if hours:
+        return ui_text("dashboard.duration.hours", hours=hours)
+    return ui_text("dashboard.duration.minutes", minutes=remainder)
+
+
+def _weekly_metric(
+    label: str,
+    value: str,
     tokens: ThemeTokens,
     *,
-    day: date,
-    muted_day: bool,
-    on_complete,
-    on_open,
+    align_end: bool = False,
+    role: str,
 ) -> ft.Control:
-    task = item.task
-    completed = task.lifecycle_status is TaskLifecycle.COMPLETED
-    text_opacity = 0.42 if completed else 0.72 if muted_day else 1.0
-    title_style = ft.TextStyle(
-        decoration=ft.TextDecoration.LINE_THROUGH if completed else ft.TextDecoration.NONE,
-    )
-    text_controls: list[ft.Control] = [
-        ft.Text(
-            task.title,
-            color=tokens.text_primary,
-            weight=ft.FontWeight.W_600,
-            size=tokens.text_emphasis,
-            max_lines=1,
-            overflow=ft.TextOverflow.ELLIPSIS,
-            style=title_style,
-        )
-    ]
-    if (task.description or "").strip():
-        text_controls.append(
-            ft.Text(
-                task.description or "",
-                color=tokens.text_muted,
-                size=tokens.text_body,
-                max_lines=2,
-                overflow=ft.TextOverflow.ELLIPSIS,
-                style=title_style if completed else None,
-            )
-        )
-
-    completion_label = ui_text("dashboard.toggle_task", name=task.title)
-    completion_surface = ft.Container(
-        lucide_icon(
-            IconName.CHECK,
-            color=tokens.dashboard_completion_check,
-            size=18,
-            label=completion_label,
-            show_tooltip=False,
-        ) if completed else None,
-        width=22,
-        height=22,
-        alignment=ft.Alignment.CENTER,
-        bgcolor=tokens.dashboard_completion_fill if completed else None,
-        border=ft.Border.all(
-            tokens.border_width,
-            tokens.dashboard_completion_fill_border if completed else tokens.dashboard_completion_border,
-        ),
-        border_radius=tokens.radius_pill,
-    )
-    completion_target = ft.GestureDetector(
-        completion_surface,
-        mouse_cursor=ft.MouseCursor.CLICK,
-        on_tap=on_complete,
-        data={"role": "completion", "task_id": task.id},
-    )
-    completion = ft.Semantics(
-        content=completion_target,
-        label=completion_label,
-        button=True,
-        checked=completed,
-    )
-    task_body = ft.GestureDetector(
-        ft.Column(text_controls, spacing=tokens.space_0, expand=True),
-        mouse_cursor=ft.MouseCursor.CLICK,
-        on_tap=on_open,
+    return ft.Column(
+        [
+            ft.Text(label, color=tokens.text_muted, size=tokens.text_body),
+            ft.Text(value, color=tokens.text_primary, size=tokens.text_emphasis, weight=ft.FontWeight.W_700),
+        ],
+        spacing=tokens.space_1,
         expand=True,
-        opacity=text_opacity,
-        data={"role": "task-body", "task_id": task.id},
+        horizontal_alignment=ft.CrossAxisAlignment.END if align_end else ft.CrossAxisAlignment.START,
+        data={"role": role},
     )
-    drag_feedback = ft.Container(
-        ft.Text(
-            task.title,
-            color=tokens.text_primary,
-            weight=ft.FontWeight.W_600,
-            max_lines=2,
-            overflow=ft.TextOverflow.ELLIPSIS,
-        ),
-        width=300,
-        bgcolor=tokens.surface_elevated,
-        border=ft.Border.all(tokens.focus_width, tokens.accent_primary),
-        border_radius=tokens.radius_card,
-        padding=tokens.space_3,
-    )
-    drag_handle = draggable_task_handle(
-        tokens,
-        label=ui_text("dashboard.drag_task", name=task.title),
-        data={"kind": "task", "task_id": task.id, "day": day.isoformat()},
-        feedback=drag_feedback,
-        muted=completed or muted_day,
-    )
-    surface = ft.Container(
-        ft.Row(
-            [
-                completion,
-                task_body,
-                drag_handle,
-            ],
-            vertical_alignment=ft.CrossAxisAlignment.START,
-            spacing=tokens.space_2,
-        ),
-        bgcolor=tokens.surface_card,
-        border=ft.Border.all(tokens.border_width, tokens.border_default),
-        border_radius=tokens.radius_card,
-        padding=tokens.space_3,
-        animate=ft.Animation(tokens.motion_fast, ft.AnimationCurve.EASE_OUT_CUBIC),
-        data={"role": "task-card", "task_id": task.id},
-    )
-    def hover(event) -> None:
-        hovering = str(getattr(event, "data", "")).lower() == "true"
-        surface.border = ft.Border.all(
-            tokens.focus_width if hovering else tokens.border_width,
-            tokens.accent_primary if hovering else tokens.border_default,
-        )
-
-    surface.on_hover = hover
-    return surface
 
 
 def _weekly_progress(data: DashboardReadModel, tokens: ThemeTokens) -> ft.Control:
-    maximum = max((bar.planned for bar in data.weekly_bars), default=1) or 1
+    chart_height = 160
     columns: list[ft.Control] = []
     for bar in data.weekly_bars:
-        planned_height = max(tokens.space_1, int(tokens.space_12 * bar.planned / maximum))
-        completed_height = int(tokens.space_12 * bar.completed / maximum)
+        ratio = min(1.0, bar.completed / bar.planned) if bar.planned else 0.0
+        completed_height = max(1, round(chart_height * ratio)) if bar.completed else 0
+        is_today = bar.day == data.day
         columns.append(
             ft.Column(
                 [
-                    ft.Container(
-                        ft.Stack(
-                            [
-                                ft.Container(
-                                    bgcolor=tokens.border_strong,
-                                    height=planned_height,
-                                    width=tokens.space_3,
-                                    border_radius=tokens.radius_small,
-                                    bottom=0,
+                    ft.Stack(
+                        [
+                            ft.Container(
+                                left=0,
+                                right=0,
+                                top=0,
+                                bottom=0,
+                                bgcolor=tokens.dashboard_weekly_bar_track,
+                                border_radius=tokens.space_2,
+                            ),
+                            ft.Container(
+                                left=0,
+                                right=0,
+                                bottom=0,
+                                height=completed_height,
+                                visible=completed_height > 0,
+                                gradient=ft.LinearGradient(
+                                    begin=ft.Alignment.TOP_CENTER,
+                                    end=ft.Alignment.BOTTOM_CENTER,
+                                    colors=[
+                                        tokens.dashboard_weekly_bar_fill,
+                                        tokens.dashboard_board_background,
+                                    ],
                                 ),
-                                ft.Container(
-                                    bgcolor=tokens.accent_primary,
-                                    height=completed_height,
-                                    width=tokens.space_3,
-                                    border_radius=tokens.radius_small,
-                                    bottom=0,
-                                ),
-                            ],
-                            width=tokens.space_3,
-                            height=tokens.space_12,
+                                border_radius=tokens.space_2,
+                            ),
+                        ],
+                        height=chart_height,
+                        data={
+                            "role": "weekly-bar",
+                            "day": bar.day.isoformat(),
+                            "planned": bar.planned,
+                            "completed": bar.completed,
+                        },
+                        tooltip=ui_text(
+                            "dashboard.weekly_tooltip",
+                            day=format_weekday_name(bar.day),
+                            completed=bar.completed,
+                            planned=bar.planned,
                         ),
-                        height=tokens.space_12,
-                        alignment=ft.Alignment.BOTTOM_CENTER,
-                        tooltip=ui_text("dashboard.weekly_tooltip", day=format_weekday_name(bar.day), completed=bar.completed, planned=bar.planned),
                     ),
-                    ft.Text(format_weekday_initial(bar.day), size=tokens.text_small, color=tokens.text_muted),
-                    ft.Text(f"{bar.completed}/{bar.planned}", size=tokens.text_small, color=tokens.text_secondary),
+                    ft.Text(
+                        format_weekday_name(bar.day)[:3],
+                        size=tokens.text_body,
+                        color=tokens.dashboard_weekly_today if is_today else tokens.text_muted,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
                 ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=tokens.space_1,
+                spacing=tokens.space_2,
+                expand=True,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             )
         )
+
     score = "—" if data.execution_score is None else f"{data.execution_score:.0%}"
     completed_total = sum(bar.completed for bar in data.weekly_bars)
     planned_total = sum(bar.planned for bar in data.weekly_bars)
-    return ft.Column(
-        [
-            ft.Row(columns, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Divider(color=tokens.border_default),
-            ft.Row(
-                [
-                    ft.Column(
-                        [
-                            ft.Text(ui_text("dashboard.execution_score"), color=tokens.text_muted, size=tokens.text_small),
-                            ft.Text(score, color=tokens.text_primary, size=tokens.text_title, weight=ft.FontWeight.W_700),
-                        ],
-                        spacing=tokens.space_0,
-                    ),
-                    ft.Column(
-                        [
-                            ft.Text(ui_text("dashboard.completed_planned"), color=tokens.text_muted, size=tokens.text_small),
-                            ft.Text(f"{completed_total}/{planned_total}", color=tokens.text_primary, weight=ft.FontWeight.W_600),
-                        ],
-                        spacing=tokens.space_0,
-                        horizontal_alignment=ft.CrossAxisAlignment.END,
-                    ),
-                ],
-                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            ),
-            ft.Text(ui_text("dashboard.current_outcome", value=_outcome_label(data.outcome_label)), color=tokens.text_secondary, size=tokens.text_small),
-            ft.Text(ui_text("dashboard.actual_time", value=ui_text("common.not_tracked_yet")), color=tokens.text_muted, size=tokens.text_small),
-        ],
-        spacing=tokens.space_3,
+    week_start = data.weekly_bars[0].day if data.weekly_bars else data.day
+    week_end = data.weekly_bars[-1].day if data.weekly_bars else data.day
+    divider = lambda: ft.Divider(color=tokens.dashboard_board_divider, height=1, thickness=1)
+    return ft.Container(
+        ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Text(
+                            ui_text("dashboard.weekly.title"),
+                            color=tokens.text_primary,
+                            size=tokens.text_title,
+                            weight=ft.FontWeight.W_600,
+                            expand=True,
+                        ),
+                        ft.Container(
+                            ft.Text(
+                                format_dashboard_week_range(week_start, week_end),
+                                color=tokens.text_secondary,
+                                size=tokens.text_small,
+                            ),
+                            height=26,
+                            bgcolor=tokens.dashboard_date_chip_background,
+                            border=ft.Border.all(tokens.border_width, tokens.dashboard_date_chip_border),
+                            border_radius=tokens.radius_pill,
+                            padding=ft.Padding.symmetric(horizontal=tokens.space_2, vertical=tokens.space_1),
+                            alignment=ft.Alignment.CENTER,
+                        ),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                ft.Container(height=18),
+                ft.Row(columns, spacing=tokens.space_3, height=181),
+                ft.Container(height=17),
+                divider(),
+                ft.Container(height=18),
+                ft.Row(
+                    [
+                        _weekly_metric(
+                            ui_text("dashboard.execution_score"),
+                            score,
+                            tokens,
+                            role="weekly-execution-score",
+                        ),
+                        _weekly_metric(
+                            ui_text("dashboard.completed_planned"),
+                            f"{completed_total}/{planned_total}",
+                            tokens,
+                            align_end=True,
+                            role="weekly-completed-planned",
+                        ),
+                    ]
+                ),
+                ft.Container(height=14),
+                divider(),
+                ft.Container(height=18),
+                ft.Row(
+                    [
+                        _weekly_metric(
+                            ui_text("dashboard.active_time"),
+                            _format_weekly_duration(data.active_time_minutes),
+                            tokens,
+                            role="weekly-active-time",
+                        ),
+                        _weekly_metric(
+                            ui_text("dashboard.total_time"),
+                            _format_weekly_duration(data.total_time_minutes),
+                            tokens,
+                            align_end=True,
+                            role="weekly-total-time",
+                        ),
+                    ]
+                ),
+            ],
+            spacing=tokens.space_0,
+        ),
+        height=433,
+        expand=True,
+        bgcolor=tokens.dashboard_board_background,
+        border=ft.Border.all(tokens.border_width, tokens.dashboard_board_border),
+        border_radius=tokens.space_4,
+        padding=ft.Padding.only(
+            left=tokens.space_5,
+            top=tokens.space_5,
+            right=tokens.space_5,
+            bottom=tokens.space_4,
+        ),
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        data={"role": "weekly-progress-widget"},
     )
 
 
@@ -262,9 +259,12 @@ def build_dashboard(
     refresh,
     report_error,
     page: ft.Page | None = None,
+    *,
+    sidebar_collapsed: bool | Callable[[], bool] = False,
 ) -> ft.Control:
     selected_day = _selected_date(route)
     data = services.dashboard.execute(selected_day)
+    weather_data = services.weather.snapshot()
     projects = services.projects.list_projects.execute()
     dashboard_root: ft.ListView | None = None
     ordering = TaskOrderController(services)
@@ -318,13 +318,27 @@ def build_dashboard(
                 saved,
                 close_dialog,
                 report_error,
+                page=page,
+                on_deleted=saved,
             )
         )
 
     def toggle_complete(task_id: int, day: date) -> None:
         try:
-            services.tasks.toggle_completion_for_day.execute(task_id, day)
-            refresh()
+            task = services.tasks.get_editor.execute(task_id).task
+            if task.lifecycle_status is TaskLifecycle.COMPLETED:
+                services.tasks.toggle_completion_for_day.execute(task_id, day)
+                refresh()
+            elif page is not None:
+                show_complete_task_dialog(
+                    page,
+                    services,
+                    task_id,
+                    tokens,
+                    lambda _task: refresh(),
+                    report_error,
+                    selected_day=day,
+                )
         except Exception as error:
             report_error(ui_error(error))
 
@@ -347,16 +361,50 @@ def build_dashboard(
     def task_controls(day: date, items: tuple[TaskListItem, ...]) -> list[ft.Control]:
         controls = []
         for item in items:
+            card_control = task_card(
+                item,
+                tokens,
+                variant=TaskCardVariant.FULL,
+                project_colors=item.project_colors,
+                meta_chips=task_meta_chips_for_item(item, displayed_day=day),
+                muted=day < selected_day,
+                on_complete=lambda _event, task_id=item.task.id, selected=day: toggle_complete(task_id, selected),
+                on_open=lambda _event, task_id=item.task.id, selected=day: open_details(task_id, selected),
+                allow_reopen=True,
+                role="task-card",
+            )
+            draggable_card = ft.Draggable(
+                card_control,
+                group="task-card",
+                data={
+                    "role": "task-drag-handle",
+                    "kind": "task",
+                    "task_id": item.task.id,
+                    "day": day.isoformat(),
+                },
+                content_when_dragging=ft.Container(
+                    height=card_control.height,
+                    bgcolor=tokens.interactive_hover,
+                    border_radius=tokens.task_card_radius,
+                ),
+                content_feedback=ft.Container(
+                    ft.Text(
+                        item.task.title,
+                        color=tokens.text_primary,
+                        size=tokens.text_emphasis,
+                        max_lines=2,
+                        overflow=ft.TextOverflow.ELLIPSIS,
+                    ),
+                    width=300,
+                    bgcolor=tokens.task_card_background,
+                    border=ft.Border.all(tokens.border_width, tokens.task_card_hover_border),
+                    border_radius=tokens.task_card_radius,
+                    padding=tokens.space_4,
+                ),
+            )
             list_item = ft.Container(
                 ft.DragTarget(
-                    _dashboard_task_card(
-                        item,
-                        tokens,
-                        day=day,
-                        muted_day=day < selected_day,
-                        on_complete=lambda _event, task_id=item.task.id, selected=day: toggle_complete(task_id, selected),
-                        on_open=lambda _event, task_id=item.task.id, selected=day: open_details(task_id, selected),
-                    ),
+                    draggable_card,
                     group="task-card",
                     data={"day": day.isoformat(), "before_task_id": item.task.id},
                     on_accept=lambda event, selected=day, before=item.task.id: reorder(event, selected, before),
@@ -445,8 +493,8 @@ def build_dashboard(
                 size=tokens.text_small,
                 style=ft.TextStyle(decoration=ft.TextDecoration.LINE_THROUGH if historical else ft.TextDecoration.NONE),
             ),
-            bgcolor=tokens.surface_card,
-            border=ft.Border.all(tokens.border_width, tokens.border_default),
+            bgcolor=tokens.dashboard_date_chip_background,
+            border=ft.Border.all(tokens.border_width, tokens.dashboard_date_chip_border),
             border_radius=tokens.radius_pill,
             padding=ft.Padding.symmetric(horizontal=tokens.space_2, vertical=tokens.space_1),
             data={"role": "date-chip", "day": day.isoformat()},
@@ -496,36 +544,57 @@ def build_dashboard(
                 expand=True,
             ),
             expand=True,
-            padding=ft.Padding.only(
-                left=tokens.space_5,
-                top=tokens.space_5,
-                right=tokens.space_5,
-                bottom=tokens.space_4,
+            border=(
+                None
+                if last
+                else ft.Border.only(
+                    right=ft.BorderSide(tokens.border_width, tokens.dashboard_board_divider)
+                )
             ),
-            border=None if last else ft.Border.only(right=ft.BorderSide(tokens.border_width, tokens.border_default)),
             data={"role": "day-column", "day": day.isoformat()},
         )
 
     yesterday = selected_day - timedelta(days=1)
     tomorrow = selected_day + timedelta(days=1)
+    yesterday_column = day_column(yesterday, "dashboard.yesterday.title", disabled_add=True)
+    today_column = day_column(selected_day, "dashboard.today.title", disabled_add=False)
+    tomorrow_column = day_column(
+        tomorrow,
+        "dashboard.tomorrow.title",
+        disabled_add=False,
+        last=True,
+    )
     three_day_task_board = ft.Container(
         ft.Row(
             [
-                day_column(yesterday, "dashboard.yesterday.title", disabled_add=True),
-                day_column(selected_day, "dashboard.today.title", disabled_add=False),
-                day_column(tomorrow, "dashboard.tomorrow.title", disabled_add=False, last=True),
+                yesterday_column,
+                today_column,
+                tomorrow_column,
             ],
-            spacing=tokens.space_0,
+            spacing=tokens.space_6,
             expand=True,
             vertical_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
-        height=455,
-        bgcolor=tokens.surface_inner,
-        border=ft.Border.all(tokens.border_width, tokens.border_default),
-        border_radius=tokens.radius_large,
+        height=433,
+        bgcolor=tokens.dashboard_board_background,
+        border=ft.Border.all(tokens.border_width, tokens.dashboard_board_border),
+        border_radius=tokens.space_4,
+        padding=ft.Padding.only(
+            left=tokens.space_5,
+            top=tokens.space_5,
+            right=tokens.space_5,
+            bottom=tokens.space_4,
+        ),
         clip_behavior=ft.ClipBehavior.HARD_EDGE,
-        col={"sm": 12, "xxl": 9},
-        data={"role": "three-day-task-board", "max_width": 1080},
+        expand=True,
+        data={
+            "role": "three-day-task-board",
+            "max_width_expanded": 1176,
+            "max_width_collapsed": 1300,
+            "horizontal_padding": tokens.space_5,
+            "column_gap": tokens.space_6,
+            "visible_days": ("yesterday", "today", "tomorrow"),
+        },
     )
 
     if data.current_cycle:
@@ -581,26 +650,120 @@ def build_dashboard(
     if attention_controls:
         lower_left.append(card(ui_text("dashboard.attention.title"), attention_controls, tokens))
 
-    weekly_progress_widget = ft.Container(
-        card(ui_text("dashboard.weekly.title"), [_weekly_progress(data, tokens)], tokens),
-        col={"sm": 12, "xxl": 3},
-        data={"role": "weekly-progress-widget"},
-    )
+    weekly_progress_widget = _weekly_progress(data, tokens)
+    top_row_gap = tokens.space_4
+    weekly_preferred_width = 448
 
-    first_bento_row = ft.ResponsiveRow(
+    def sidebar_is_collapsed() -> bool:
+        return sidebar_collapsed() if callable(sidebar_collapsed) else sidebar_collapsed
+
+    def update_day_dividers(visible: tuple[ft.Container, ...]) -> None:
+        for column in (yesterday_column, today_column, tomorrow_column):
+            column.border = None
+        for column in visible[:-1]:
+            column.border = ft.Border.only(
+                right=ft.BorderSide(tokens.border_width, tokens.dashboard_board_divider)
+            )
+
+    def relayout_day_columns(event) -> None:
+        board_width = max(0.0, float(getattr(event, "width", 0) or 0))
+        if board_width <= 0:
+            return
+
+        if board_width >= 900:
+            visible_columns = (yesterday_column, today_column, tomorrow_column)
+            visible_days = ("yesterday", "today", "tomorrow")
+        elif board_width >= 584:
+            visible_columns = (today_column, tomorrow_column)
+            visible_days = ("today", "tomorrow")
+        else:
+            visible_columns = (today_column,)
+            visible_days = ("today",)
+
+        state = (round(board_width, 2), visible_days)
+        if three_day_task_board.data.get("day_layout_state") == state:
+            return
+
+        yesterday_column.visible = yesterday_column in visible_columns
+        today_column.visible = True
+        tomorrow_column.visible = tomorrow_column in visible_columns
+        update_day_dividers(visible_columns)
+        three_day_task_board.data.update(
+            {
+                "measured_width": board_width,
+                "visible_days": visible_days,
+                "day_layout_state": state,
+            }
+        )
+        three_day_task_board.update()
+
+    three_day_task_board.on_size_change = relayout_day_columns
+
+    def relayout_top_row(event) -> None:
+        row_width = max(0.0, float(getattr(event, "width", 0) or 0))
+        if row_width <= 0:
+            return
+
+        maximum_board_width = 1300 if sidebar_is_collapsed() else 1176
+        comfortable_row_width = maximum_board_width + top_row_gap + weekly_preferred_width
+        if row_width >= comfortable_row_width:
+            layout_mode = "board-max-weekly-fill"
+            board_width = maximum_board_width
+            board_expand: bool | int = False
+            weekly_expand: bool | int = True
+        elif row_width >= 1000:
+            layout_mode = "balanced-two-day"
+            board_width = None
+            board_expand = 3
+            weekly_expand = 2
+        else:
+            layout_mode = "balanced-one-day"
+            board_width = None
+            board_expand = 1
+            weekly_expand = 1
+
+        state = (layout_mode, maximum_board_width)
+        if first_bento_row.data.get("layout_state") == state:
+            return
+
+        three_day_task_board.width = board_width
+        three_day_task_board.expand = board_expand
+        weekly_progress_widget.width = None
+        weekly_progress_widget.expand = weekly_expand
+        first_bento_row.data.update(
+            {
+                "layout_mode": layout_mode,
+                "layout_state": state,
+                "board_max_width": maximum_board_width,
+            }
+        )
+        first_bento_row.update()
+
+    first_bento_row = ft.Row(
         [three_day_task_board, weekly_progress_widget],
-        spacing=tokens.space_6,
-        run_spacing=tokens.space_6,
+        spacing=top_row_gap,
         alignment=ft.MainAxisAlignment.START,
-        vertical_alignment=ft.CrossAxisAlignment.START,
-        data={"role": "first-bento-row", "widget_gap": tokens.space_6, "responsive_fallback": "stack"},
+        vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+        height=433,
+        on_size_change=relayout_top_row,
+        data={
+            "role": "first-bento-row",
+            "widget_gap": top_row_gap,
+            "weekly_preferred_width": weekly_preferred_width,
+        },
     )
 
     today_count = len(data.today_tasks)
+    dashboard_upper = ft.Column(
+        [first_bento_row, build_weather_widget(weather_data, tokens)],
+        spacing=tokens.space_4,
+        horizontal_alignment=ft.CrossAxisAlignment.START,
+        data={"role": "dashboard-upper", "weather_gap": tokens.space_4},
+    )
     dashboard_root = page_container(
         ui_text("dashboard.greeting", name=ui_text("profile.display_name")),
         [
-            first_bento_row,
+            dashboard_upper,
             ft.ResponsiveRow(
                 [
                     ft.Container(ft.Column(lower_left, spacing=tokens.space_4), col={"sm": 12, "lg": 8}),

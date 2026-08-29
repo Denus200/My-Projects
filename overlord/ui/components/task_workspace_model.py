@@ -4,8 +4,22 @@ import calendar
 from datetime import date, datetime, timedelta
 
 from overlord.app.read_models import TaskListItem
-from overlord.modules.tasks.domain import TaskBoardColumn, board_column, is_scheduled_for_day
+from overlord.modules.tasks.domain import (
+    TaskBoardColumn,
+    TaskLifecycle,
+    board_column,
+    is_scheduled_for_day,
+)
 from overlord.ui.components.task_ordering import moved_task_ids
+
+
+KANBAN_NEEDS_ATTENTION = "needs_attention"
+KANBAN_COLUMN_KEYS = (
+    TaskBoardColumn.PLANNED.value,
+    TaskBoardColumn.IN_PROGRESS.value,
+    KANBAN_NEEDS_ATTENTION,
+    TaskBoardColumn.COMPLETED.value,
+)
 
 
 def week_start(day: date, first_day: int) -> date:
@@ -61,6 +75,58 @@ def group_board_items(
     for item in items:
         grouped[board_column(item.task, reference)].append(item)
     return {column: tuple(column_items) for column, column_items in grouped.items()}
+
+
+def kanban_column_key(item: TaskListItem, reference: datetime) -> str:
+    """Project the five canonical board buckets into the approved four-column UI."""
+    if item.task.lifecycle_status is TaskLifecycle.COMPLETED:
+        return TaskBoardColumn.COMPLETED.value
+    canonical = board_column(item.task, reference)
+    if (
+        item.open_blockers > 0
+        or item.task.lifecycle_status is TaskLifecycle.PAUSED
+        or canonical in {TaskBoardColumn.MISSED, TaskBoardColumn.ARCHIVE}
+    ):
+        return KANBAN_NEEDS_ATTENTION
+    return canonical.value
+
+
+def group_kanban_items(
+    items: tuple[TaskListItem, ...],
+    reference: datetime,
+) -> dict[str, tuple[TaskListItem, ...]]:
+    grouped: dict[str, list[TaskListItem]] = {key: [] for key in KANBAN_COLUMN_KEYS}
+    for item in items:
+        grouped[kanban_column_key(item, reference)].append(item)
+    return {key: tuple(column_items) for key, column_items in grouped.items()}
+
+
+def normalized_kanban_column_order(order: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for value in normalized_column_order(order):
+        visual = (
+            KANBAN_NEEDS_ATTENTION
+            if value in {TaskBoardColumn.MISSED.value, TaskBoardColumn.ARCHIVE.value}
+            else value
+        )
+        if visual in KANBAN_COLUMN_KEYS and visual not in normalized:
+            normalized.append(visual)
+    normalized.extend(key for key in KANBAN_COLUMN_KEYS if key not in normalized)
+    return normalized
+
+
+def expanded_board_column_order(order: list[str]) -> list[str]:
+    expanded: list[str] = []
+    for value in order:
+        if value == KANBAN_NEEDS_ATTENTION:
+            expanded.extend((TaskBoardColumn.MISSED.value, TaskBoardColumn.ARCHIVE.value))
+        elif value in {
+            TaskBoardColumn.PLANNED.value,
+            TaskBoardColumn.IN_PROGRESS.value,
+            TaskBoardColumn.COMPLETED.value,
+        }:
+            expanded.append(value)
+    return normalized_column_order(expanded)
 
 
 def normalized_column_order(order: list[str]) -> list[str]:

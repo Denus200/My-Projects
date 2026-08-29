@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-08-14
+Last updated: 2026-08-22
 
 Repository root: `E:\Projects\Overlord`
 
@@ -14,7 +14,7 @@ The product uses Python 3.14, Flet 0.84, and SQLite. It is intentionally a modul
 
 ## 2. Current State
 
-Foundation v0.1 and UX phases U1-U5 are implemented. Date-driven Tasks Stages 1 and 2 and the behavior-preserving Presentation boundary refactor are also implemented. The application has a stable desktop shell and a unified Tasks workspace with Kanban, week, and month views. Dashboard, Projects, Project Detail, 12-Week Plans, Cycle creation/detail, and categorized Settings remain working. The separate Daily Planning workflow has been retired.
+Foundation v0.1 and UX phases U1-U5 are implemented. Date-driven Tasks Stages 1 and 2, the reusable Task Card/three-day Dashboard board, the Dashboard Weather widget, and the Projects foundation/redesign are also implemented. The application has a stable desktop shell, a unified Tasks workspace with Kanban, week, and month views, and Project workspaces with Plans, Stages, Tasks, local Notes & Files, and reversible Archive behavior. The separate Daily Planning workflow has been retired.
 
 The current build is a functional technical Foundation with an implemented light-theme design-system baseline, not final page-level product UX. The next approved activity is manual workflow review and page-by-page UX/UI refinement. Automatic feature expansion is not approved.
 
@@ -33,14 +33,25 @@ Web/browser mode is retired. `--web` and `--port` are rejected intentionally.
 - Added connection-per-operation SQLite access, explicit Unit of Work transactions, forward-only migrations, validated backups, recovery handling, and rotating local logs.
 - Preserved the existing production database and added deterministic isolated demo data at `data/demo/overlord_demo.db`.
 - Built a mounted App Shell with persistent collapsible Sidebar, typed routes, contained errors, and delayed content-only loading.
-- Built the Dashboard with a fixed three-day Yesterday/Today/Tomorrow task board, Weekly Progress, Current Cycle, and Needs Attention.
+- Built the Dashboard with a fixed three-day Yesterday/Today/Tomorrow task board, Weekly Progress, a reference-driven Weather widget, Current Cycle, and Needs Attention.
+- Connected the Weather widget to Open-Meteo for fixed Merefa current/daily conditions through a normalized provider, database-adjacent JSON cache, offline fallback, and non-blocking 30-minute refresh loop.
 - Made Task the single source of scheduling truth with start date/time, optional end date/time, and optional deadline.
 - Removed Primary/Secondary capacity, the Daily Planning route, and the Dashboard Plan the day workflow.
-- Replaced the Foundation Tasks list with one Kanban/week/month planning workspace and contextual creation for undated work, Today, and calendar dates.
-- Added direct Kanban drag-and-drop for card ordering, cross-column Task moves, and column reordering; Not completed remains automatic.
+- Replaced the Foundation Tasks list with one My Tasks Kanban/week/month planning workspace and contextual creation for undated work, Today, and calendar dates.
+- Redesigned My Tasks/Kanban as four presentation columns: Planned, In Progress, Needs Attention, and Completed. Needs Attention groups existing missed/archive placement plus open-blocker and Paused conditions; it is not a persisted lifecycle state.
+- Added direct Kanban drag-and-drop for card ordering, valid cross-column Task moves, and column reordering; Needs Attention remains derived and cannot be assigned manually.
+- Redesigned My Tasks/Week as one horizontally scrolling seven-day board with fixed 300-pixel day columns, independent day-list scrolling, real Task-date grouping, filtered counts, and contextual per-day creation. Week and Month reuse one transient expandable date-navigation Tabs model.
+- Redesigned My Tasks/Month as a responsive Monday–Sunday calendar matrix with real leading/trailing dates, dynamic current-day state, fixed-height day cells, independently scrolling compact Task lists, contextual date-prefilled creation, and shared Search/normalized Project filtering.
 - Removed hidden More details creation; scheduling, details, Project, and Cycle relationships now share one visible task form.
 - Added standalone Tasks, searchable/filterable Task browsing, status history, blockers, priorities, and reusable editor content.
 - Replaced Project CRUD-first presentation with browse-first Project summaries and execution-oriented Project Detail.
+- Added persistent Project colors and favorites, normalized zero-to-four Project links per Task, and an optional same-Project Stage assignment on each link.
+- Added Project Plans and ordered Stages without conflating them with global 12-week Cycles.
+- Replaced Quick Task capture with one reference-driven Create Task modal using progressive advanced options, shared date/date-time overlays, zero-to-four Project links, dynamic same-Project Stage selectors, nullable duration estimates, explicit normal/draft creation intent, and nested Checklists saved atomically.
+- Replaced the separate Dashboard and Tasks editors with one reference-driven Task Details modal that atomically edits lifecycle, Date/Deadline, normalized Project/Stage links, nullable Estimated Time, and stable-ID nested Checklists; explicit confirmed deletion cleans only Task-owned relations.
+- Added one canonical Complete Task modal across Task Details, Dashboard, Tasks/Kanban, and Project Tasks. Confirmation atomically saves completion with optional nullable Estimated/Total/Active minute values; cancel and close save nothing.
+- Added Project-local Markdown notes and copied attachments backed by metadata-only SQLite rows.
+- Connected persisted Project colors to the shared Task Card on Dashboard, Tasks, and Project Tasks.
 - Added searchable Cycle cards, an atomic five-step Cycle creation wizard, Weekly Outcomes, connected Projects/Milestones/Tasks, and Cycle Detail.
 - Redesigned Settings into Appearance, Planning, and Startup categories with System/Light/Dark themes and motion preferences.
 - Added complete English/Russian interface catalogs with a persistent EN/RU switch in the mounted Sidebar.
@@ -59,9 +70,11 @@ Web/browser mode is retired. `--web` and `--port` are rejected intentionally.
 - Production data is `data/overlord.db`; demo data is `data/demo/overlord_demo.db`. Demo mode must never write production data.
 - Preserve Python/Flet/SQLite and the modular-monolith architecture. Do not introduce an ORM, dependency-injection framework, services, accounts, or networking without a concrete need.
 - Dashboard is a composed read model and owns no scheduling or assignment data; Task infrastructure stores only optional per-day presentation positions.
-- There is one Task entity. A Task may be standalone; Project is optional.
-- Task identity contains its canonical schedule. Dashboard derives all Tasks active on each displayed date and has no planning group or daily capacity; explicit within-day card order is a separate Task presentation preference.
+- Dashboard Weather is read-only external context. Open-Meteo is isolated behind the Weather provider/service port; Presentation consumes normalized cached data and never performs HTTP requests.
+- There is one Task entity. A Task may be standalone or link to at most four Projects; each Project link may have zero or one Stage owned by that Project.
+- Task identity contains its canonical schedule. Dashboard day lists derive scheduled Planned and In Progress Tasks without open Blockers, plus Completed Tasks; Blocked and Paused Tasks retain their dates but are hidden from those actionable lists. Dashboard has no planning group or daily capacity, and explicit within-day card order is a separate Task presentation preference.
 - Blocked is derived from an open Blocker, not a Task lifecycle status.
+- Paused is a persisted Task lifecycle state; Task Details presents Blocked as the derived open-Blocker state and never stores a second blocked flag.
 - Definition of Done is required before Milestone assignment.
 - Projects remain independent from Cycles and may participate in multiple Cycles over time.
 - Execution Score is completed originally planned Tasks divided by originally planned Tasks.
@@ -102,14 +115,15 @@ Historical browser screenshots and reports remain evidence of earlier verificati
 - Project summaries now show honest execution context rather than database fields: stage, milestone, next action, eligible-Task progress, blockers, open Tasks, and active Cycle context.
 - Cycle creation is transient until final atomic submission. Weekly progress counts persisted Weekly Outcomes rather than elapsed time.
 - A large gray Settings block was traced to a Flet 0.84 layout error: a wrapping Row contained an expanded child. Removing that invalid combination restored the controls, and a regression test now guards it.
-- Task editing uses one clear modal window shared by Kanban and calendar cards; its final visual polish remains Stage 3 work.
+- Task editing uses one Task Details modal shared by Dashboard, Kanban, calendar cards, and Project deep links. All completion origins use one separate canonical Complete Task modal.
 
 ## 7. Current Problems
 
 - The shared light-theme foundations are consistent, but individual pages and complex workflows still need manual product and UX/UI refinement.
 - The supplied Overlord SVG mark is integrated into the mounted Sidebar; the Windows icon, splash asset, and packaging pipeline are not finalized.
-- Task-window layout and card density still need reference-driven Stage 3 polish.
-- Project/Cycle category-specific visual direction and decorative animation references are missing.
+- Create Task tranche 1, Task Details tranche 2, and Complete Task tranche 3 are complete. Card density remains separately scoped.
+- Cycle category-specific visual direction and decorative animation references remain open; Projects now use the approved reference set.
+- Project activity-feed/checkpoint history and Work Sessions do not yet provide the richer reference data needed for full recent-update and actual-time panels.
 - Python 3.14/Flet imports and some database integration tests can start slowly on this Windows environment.
 - Physical desktop visual checks across all Windows scaling levels, themes, and supported resolutions remain partly manual.
 - Work Sessions do not exist, so actual-time metrics are intentionally unavailable.
@@ -119,7 +133,7 @@ Historical browser screenshots and reports remain evidence of earlier verificati
 
 1. Verify the unified Tasks workflow in the deterministic desktop demo with `python main.py --demo`.
 2. Keep recurring actions outside Tasks until their separate goals/skills/habits concept is explicitly designed.
-3. Stage 3: use the user's visual reference, adapt it to Overlord's exact workflow, and complete page-level visual polish.
+3. Continue only with the next separately approved Stage 3 tranche; do not reopen the accepted Create Task, Task Details, or Complete Task architecture without new evidence.
 4. Tune card density and Task-window composition from real desktop use without changing canonical scheduling rules.
 5. Resolve the logo and category-specific visual direction approval gates before broader feature work.
 

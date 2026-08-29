@@ -1,7 +1,8 @@
 import hashlib
+import sqlite3
 import unittest
 import uuid
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,8 +12,8 @@ from overlord.bootstrap import DEFAULT_DATABASE_PATH, bootstrap
 from overlord.demo import demo_seed_fingerprint, seed_demo_database
 from overlord.modules.blockers.domain import BlockerType
 from overlord.modules.cycles.domain import CycleStatus
-from overlord.modules.projects.domain import ProjectStatus
-from overlord.modules.tasks.domain import TaskLifecycle
+from overlord.modules.projects.domain import ProjectStageStatus, ProjectStatus
+from overlord.modules.tasks.domain import TaskLifecycle, TaskProjectAssignment
 from overlord.ui.design_system.tokens import LIGHT_TOKENS
 from overlord.ui.pages.projects.page import _task_matches, build_projects
 from overlord.ui.state import AppSessionState, ProjectFilterState
@@ -123,6 +124,121 @@ class U3ProjectTests(unittest.TestCase):
         self.services.tasks.create_task.execute(self.project.id, "Second", next_action="Second action")
         self.assertIsNone(self.services.projects.get_detail.execute(self.project.id).next_action)
 
+    def test_plan_progress_separates_current_stage_from_whole_plan(self):
+        plan = self.services.projects.create_plan.execute(self.project.id, "Foundation UX Improvements")
+        stages = tuple(
+            self.services.projects.create_stage.execute(self.project.id, plan.id, title)
+            for title in ("Research", "Findings", "Design", "Delivery")
+        )
+        for stage in stages[:2]:
+            self.services.projects.change_stage_status.execute(stage.id, ProjectStageStatus.COMPLETED)
+        self.services.projects.change_stage_status.execute(stages[2].id, ProjectStageStatus.IN_PROGRESS)
+
+        initial = self.services.projects.get_detail.execute(self.project.id).plan_progress
+        self.assertIsNotNone(initial)
+        self.assertEqual(2, initial.completed_stage_count)
+        self.assertEqual(0.0, initial.current_stage_progress)
+        self.assertEqual(0.5, initial.overall_progress)
+        self.assertEqual(stages[2].id, initial.current_stage.stage.id)
+
+        completed = self.services.tasks.create_task.execute(
+            None,
+            "Completed design task",
+            project_links=(TaskProjectAssignment(self.project.id, stages[2].id),),
+        )
+        self.services.tasks.complete_task.execute(completed.id)
+        self.services.tasks.create_task.execute(
+            None,
+            "Open design task",
+            project_links=(TaskProjectAssignment(self.project.id, stages[2].id),),
+        )
+        partial = self.services.projects.get_detail.execute(self.project.id).plan_progress
+        self.assertEqual(0.5, partial.current_stage_progress)
+        self.assertEqual(0.625, partial.overall_progress)
+
+        self.services.projects.change_stage_status.execute(stages[2].id, ProjectStageStatus.COMPLETED)
+        self.services.projects.change_stage_status.execute(stages[3].id, ProjectStageStatus.COMPLETED)
+        finished = self.services.projects.get_detail.execute(self.project.id).plan_progress
+        self.assertEqual(4, finished.completed_stage_count)
+        self.assertIsNone(finished.current_stage_progress)
+        self.assertEqual(1.0, finished.overall_progress)
+
+    def test_checkpoint_binding_uses_milestone_target_date_only(self):
+        cycle = self.services.cycles.create_cycle.execute("Checkpoint Cycle", "Review evidence", date.today())
+        self.services.cycles.connect_project.execute(cycle.id, self.project.id)
+        milestone = self.services.cycles.connect_milestone.execute(
+            cycle.id,
+            self.project.id,
+            "Dashboard task flow approved",
+            "Approval is recorded.",
+        )
+        undated = self.services.projects.get_detail.execute(self.project.id)
+        self.assertEqual(milestone.id, undated.current_milestone.id)
+        self.assertIsNone(undated.current_milestone.target_date)
+        self.assertEqual(cycle.id, undated.current_milestone_cycle_id)
+
+        target = date.today() + timedelta(days=9)
+        connection = sqlite3.connect(self.path)
+        try:
+            connection.execute(
+                "UPDATE milestones SET target_date=? WHERE id=?",
+                (target.isoformat(), milestone.id),
+            )
+            connection.commit()
+        finally:
+            connection.close()
+        dated = self.services.projects.get_detail.execute(self.project.id)
+        self.assertEqual(target, dated.current_milestone.target_date)
+
+    def test_next_action_binding_preserves_selected_task_identity_and_optional_date(self):
+        planned = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Planned task",
+            next_action="Use the shared action text",
+        )
+        selected = self.services.tasks.create_task.execute(
+            self.project.id,
+            "Current task",
+            schedule_start_date=date.today(),
+            deadline_at=datetime.combine(date.today() + timedelta(days=2), time(17, 0)),
+            next_action="Use the shared action text",
+        )
+        self.services.tasks.change_lifecycle.execute(selected.id, TaskLifecycle.IN_PROGRESS)
+        detail = self.services.projects.get_detail.execute(self.project.id)
+        self.assertEqual(selected.id, detail.next_action_task_id)
+        self.assertNotEqual(planned.id, detail.next_action_task_id)
+
+    def test_linked_cycle_uses_active_then_most_recent_persisted_relation(self):
+        older = self.services.cycles.create_cycle.execute(
+            "Completed Plan",
+            "Completed outcome",
+            date.today() - timedelta(weeks=14),
+        )
+        self.services.cycles.connect_project.execute(older.id, self.project.id)
+        self.services.cycles.change_status.execute(older.id, CycleStatus.COMPLETED)
+        inactive = self.services.projects.get_detail.execute(self.project.id)
+        self.assertIsNone(inactive.active_cycle)
+        self.assertEqual(older.id, inactive.linked_cycle.id)
+        self.assertIsNone(inactive.linked_cycle.current_week(date.today()))
+
+        newer_inactive = self.services.cycles.create_cycle.execute(
+            "Draft Plan",
+            "Future outcome",
+            date.today() - timedelta(weeks=1),
+        )
+        self.services.cycles.connect_project.execute(newer_inactive.id, self.project.id)
+        most_recent = self.services.projects.get_detail.execute(self.project.id)
+        self.assertIsNone(most_recent.active_cycle)
+        self.assertEqual(newer_inactive.id, most_recent.linked_cycle.id)
+
+        active = self.services.cycles.create_cycle.execute("Active Plan", "Current outcome", date.today())
+        self.services.cycles.change_status.execute(active.id, CycleStatus.ACTIVE)
+        self.services.cycles.connect_project.execute(active.id, self.project.id)
+        current = self.services.projects.get_detail.execute(self.project.id)
+        self.assertEqual(active.id, current.active_cycle.id)
+        self.assertEqual(active.id, current.linked_cycle.id)
+        self.assertEqual(1, current.linked_cycle.current_week(date.today()))
+
     def test_projects_page_is_browse_first_and_creation_is_transient(self):
         page = FakePage()
         state = AppSessionState(
@@ -140,11 +256,11 @@ class U3ProjectTests(unittest.TestCase):
             state,
             page,
         )
-        browse_card = _role(control, "page-content")[0].controls[0]
-        self.assertEqual(ui_text("projects.browse"), browse_card.content.controls[0].value)
-        self.assertNotEqual(ui_text("projects.new_title"), browse_card.content.controls[0].value)
+        self.assertEqual(1, len(_role(control, "projects-grid")))
+        self.assertEqual(1, len(_role(control, "projects-toolbar")))
+        self.assertEqual([], page.dialogs)
         with patch.object(ft.Control, "update", lambda _control: None):
-            _role(control, "page-header-actions")[0].controls[0].on_click(None)
+            _role(control, "projects-new-project")[0].on_click(None)
             dialog = page.dialogs[-1]
             dialog.content.content.controls[1].value = "Created Project"
             dialog.content.content.controls[2].value = "Created from compact dialog"
@@ -158,18 +274,20 @@ class U3ProjectTests(unittest.TestCase):
         control = build_projects(
             self.services,
             LIGHT_TOKENS,
-            f"/projects/{self.project.id}",
+            f"/projects/{self.project.id}/tasks",
             lambda _route: None,
             lambda: None,
             self.fail,
-            AppSessionState(route=f"/projects/{self.project.id}"),
+            AppSessionState(route=f"/projects/{self.project.id}/tasks"),
             page,
         )
-        tasks_card = _role(control, "page-content")[0].controls[-1]
-        quick_button = tasks_card.content.controls[1].controls[-1]
+        filters = _role(control, "project-task-filters")[0]
+        quick_button = filters.controls[-1].content
         quick_button.on_click(None)
-        project_dropdown = page.dialogs[-1].content.content.controls[2]
-        self.assertEqual(str(self.project.id), project_dropdown.value)
+        self.assertEqual(
+            [self.project.id],
+            page.dialogs[-1].data["state"].selected_project_ids,
+        )
 
     def test_project_task_views_separate_open_completed_and_blocked(self):
         open_task = self.services.tasks.create_task.execute(self.project.id, "Open")
@@ -197,9 +315,8 @@ class U3ProjectTests(unittest.TestCase):
             self.fail,
         )
         self.assertIsInstance(control, ft.Control)
-        progress_card = _role(control, "page-content")[0].controls[1].controls[0]
-        visible = " ".join(str(getattr(item, "value", "")) for item in progress_card.content.controls)
-        self.assertIn("Progress unavailable", visible)
+        visible = " ".join(str(getattr(item, "value", "")) for item in _walk(control))
+        self.assertIn(ui_text("projects.no_project_plan"), visible)
         self.assertNotIn("0%", visible)
 
     def test_project_lifecycle_changes_preserve_project_and_tasks(self):

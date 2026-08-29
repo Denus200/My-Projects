@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from overlord.app.read_models import TaskListItem
-from overlord.modules.cycles.domain import Cycle, CycleStatus, Milestone, WeeklyOutcome
+from overlord.modules.cycles.domain import Cycle, Milestone, WeeklyOutcome
 from overlord.modules.projects.domain import Project
 from overlord.modules.projects.read_models import ProjectDetail
 
@@ -38,11 +38,7 @@ class CycleSummary:
         return max(0, self.cycle.length_weeks - self.scheduled_outcome_count)
 
     def current_week(self, as_of: date) -> int | None:
-        if self.cycle.status is not CycleStatus.ACTIVE:
-            return None
-        if not self.cycle.start_date <= as_of <= self.cycle.end_date:
-            return None
-        return min(self.cycle.length_weeks, (as_of - self.cycle.start_date).days // 7 + 1)
+        return self.cycle.current_week(as_of)
 
 
 @dataclass(frozen=True, slots=True)

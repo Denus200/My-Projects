@@ -75,3 +75,44 @@ def deadline_value(value: str, *, field: str = "deadline") -> datetime | None:
     selected_date = flexible_date_value(parts[0], field=field)
     selected_time = time_value(parts[1], field=field) if len(parts) == 2 else time.max
     return datetime.combine(selected_date, selected_time)
+
+
+def duration_minutes_value(
+    hours_value: str | None,
+    minutes_value: str | None,
+    *,
+    field: str = "estimate",
+    label: str | None = None,
+) -> int | None:
+    hours_raw = (hours_value or "").strip()
+    minutes_raw = (minutes_value or "").strip()
+    if not hours_raw and not minutes_raw:
+        return None
+    try:
+        hours = int(hours_raw or "0")
+        minutes = int(minutes_raw or "0")
+    except ValueError as error:
+        message = (
+            ui_text("tasks.duration_nonnegative", field=label)
+            if label
+            else ui_text("tasks.estimate_nonnegative")
+        )
+        raise FieldValidationError(field, "integer", message) from error
+    if hours < 0 or minutes < 0:
+        message = (
+            ui_text("tasks.duration_nonnegative", field=label)
+            if label
+            else ui_text("tasks.estimate_nonnegative")
+        )
+        raise FieldValidationError(field, "nonnegative", message)
+    if minutes > 59:
+        raise FieldValidationError(field, "minute_range", ui_text("tasks.estimate_minute_range"))
+    total = hours * 60 + minutes
+    if total <= 0:
+        message = (
+            ui_text("tasks.duration_positive", field=label)
+            if label
+            else "Estimate must be a positive number of minutes."
+        )
+        raise FieldValidationError(field, "positive", message)
+    return total

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from overlord.modules.projects.application import ProjectApplication
     from overlord.modules.settings.application import SettingsApplication
     from overlord.modules.tasks.application import TaskApplication
+    from overlord.modules.weather.application import WeatherService
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,3 +21,4 @@ class ApplicationServices:
     settings: SettingsApplication
     dashboard: GetDashboardQuery
     cycles: CycleApplication
+    weather: WeatherService

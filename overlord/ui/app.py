@@ -100,6 +100,7 @@ class OverlordApp:
         self._settings_narrow: bool | None = None
         self.last_route_timing: RouteTiming | None = None
         self._shell: AppShell | None = None
+        self._weather_refresh_future = None
 
     def mount(self) -> None:
         if self._mounted:
@@ -122,6 +123,9 @@ class OverlordApp:
         self.page.add(self._shell.control)
         self._mounted = True
         self._render_route_sync(self.state.route, previous_route="<startup>", log_transition=True)
+
+        if isinstance(self.page, ft.Page) and hasattr(self.page, "run_task"):
+            self._weather_refresh_future = self.page.run_task(self._weather_refresh_loop)
 
         if (self.page.route or "/") != self.state.route:
             self._schedule_route_push(self.state.route)
@@ -227,6 +231,17 @@ class OverlordApp:
         self._set_loading_visible(True)
         self.page.update()
 
+    async def _weather_refresh_loop(self) -> None:
+        while self._mounted:
+            result = await asyncio.to_thread(self.services.weather.refresh_if_stale)
+            if (
+                result.updated
+                and self._pending_route is None
+                and route_family(urlparse(self.state.route).path) is AppRoute.DASHBOARD
+            ):
+                self.render()
+            await asyncio.sleep(self.services.weather.next_refresh_delay_seconds())
+
     def _set_loading_visible(self, visible: bool) -> None:
         if self._shell is not None:
             self._shell.set_loading_visible(visible)
@@ -267,7 +282,10 @@ class OverlordApp:
             self.state.sidebar_collapsed = updated.sidebar_collapsed
             if self._shell is not None:
                 self._shell.sidebar.rebuild(self._tokens(), self.state.route, self.state.sidebar_collapsed)
-            self.page.update()
+            if route_family(self.state.route) is AppRoute.PROJECTS:
+                self.render()
+            else:
+                self.page.update()
         except Exception as error:
             self.report_error(ui_error(error))
 
@@ -449,6 +467,7 @@ class OverlordApp:
                 self.render,
                 self.report_error,
                 self.page,
+                sidebar_collapsed=lambda: self.state.sidebar_collapsed,
             )
         if family is AppRoute.TASKS:
             return build_tasks(self.services, tokens, self.state, self.render, self.report_error, self.page)

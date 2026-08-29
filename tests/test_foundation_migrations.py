@@ -49,21 +49,27 @@ class FoundationMigrationTests(unittest.TestCase):
         for path in self.paths:
             path.unlink(missing_ok=True)
 
-    def test_fresh_database_reaches_version_nine(self):
+    def test_fresh_database_reaches_version_thirteen(self):
         path = self.database_path("fresh")
         result = MigrationRunner(ConnectionFactory(path)).migrate()
-        self.assertEqual((1, 2, 3, 4, 5, 6, 7, 8, 9), result.applied)
+        self.assertEqual((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), result.applied)
         self.assertIsNone(result.backup)
         with closing(sqlite3.connect(path)) as connection:
-            self.assertEqual(9, connection.execute("PRAGMA user_version").fetchone()[0])
+            self.assertEqual(13, connection.execute("PRAGMA user_version").fetchone()[0])
             self.assertEqual("ok", connection.execute("PRAGMA integrity_check").fetchone()[0])
             self.assertEqual([], connection.execute("PRAGMA foreign_key_check").fetchall())
             self.assertEqual(1, connection.execute("SELECT COUNT(*) FROM settings").fetchone()[0])
             self.assertEqual("en", connection.execute("SELECT locale FROM settings WHERE id=1").fetchone()[0])
             task_columns = {row[1] for row in connection.execute("PRAGMA table_info(tasks)")}
-            self.assertTrue({"schedule_start_date", "schedule_start_time", "schedule_end_date", "schedule_end_time", "deadline_at"}.issubset(task_columns))
+            self.assertTrue({"schedule_start_date", "schedule_start_time", "schedule_end_date", "schedule_end_time", "deadline_at", "creation_mode", "total_time_minutes", "active_time_minutes"}.issubset(task_columns))
             self.assertIsNotNone(connection.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='task_day_positions'"
+            ).fetchone())
+            self.assertIsNotNone(connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='task_project_links'"
+            ).fetchone())
+            self.assertIsNotNone(connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='task_checklist_items'"
             ).fetchone())
 
     def test_exact_legacy_database_is_backed_up_and_preserved(self):
@@ -143,7 +149,7 @@ class FoundationMigrationTests(unittest.TestCase):
         first = runner.migrate(target_version=4)
         self.assertEqual(4, first.to_version)
         final = runner.migrate()
-        self.assertEqual((5, 6, 7, 8, 9), final.applied)
+        self.assertEqual((5, 6, 7, 8, 9, 10, 11, 12, 13), final.applied)
         self.assertIsNotNone(final.backup)
         self.paths.extend((final.backup.database_path, final.backup.manifest_path))
 
@@ -169,7 +175,7 @@ class FoundationMigrationTests(unittest.TestCase):
             connection.commit()
 
         result = runner.migrate()
-        self.assertEqual((6, 7, 8, 9), result.applied)
+        self.assertEqual((6, 7, 8, 9, 10, 11, 12, 13), result.applied)
         self.assertIsNotNone(result.backup)
         self.paths.extend((result.backup.database_path, result.backup.manifest_path))
         with closing(sqlite3.connect(path)) as migrated:
@@ -185,6 +191,140 @@ class FoundationMigrationTests(unittest.TestCase):
             self.assertEqual((blocker_id, task_id), migrated.execute(
                 "SELECT id,task_id FROM blockers WHERE id=?", (blocker_id,)
             ).fetchone())
+            self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
+
+    def test_version_nine_legacy_project_link_is_preserved_in_normalized_table(self):
+        path = self.database_path("project-links")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate(target_version=9)
+        with closing(sqlite3.connect(path)) as connection:
+            project_id = connection.execute("INSERT INTO projects(title) VALUES ('Titan')").lastrowid
+            task_id = connection.execute(
+                "INSERT INTO tasks(project_id,title,scheduled_date,lifecycle_status) VALUES (?,?,?,'planned')",
+                (project_id, "Legacy linked Task", "2026-08-07"),
+            ).lastrowid
+            connection.commit()
+        result = runner.migrate()
+        self.assertEqual((10, 11, 12, 13), result.applied)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        with closing(sqlite3.connect(path)) as migrated:
+            self.assertEqual(
+                (task_id, project_id, None, 1),
+                migrated.execute(
+                    "SELECT task_id,project_id,stage_id,position FROM task_project_links"
+                ).fetchone(),
+            )
+            self.assertEqual("ok", migrated.execute("PRAGMA integrity_check").fetchone()[0])
+            self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
+
+    def test_version_ten_tasks_default_to_normal_creation_mode(self):
+        path = self.database_path("create-task-flow")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate(target_version=10)
+        with closing(sqlite3.connect(path)) as connection:
+            task_id = connection.execute(
+                "INSERT INTO tasks(title,scheduled_date,lifecycle_status) VALUES (?,?,?)",
+                ("Existing Task", "2026-08-21", "planned"),
+            ).lastrowid
+            connection.commit()
+        result = runner.migrate()
+        self.assertEqual((11, 12, 13), result.applied)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        with closing(sqlite3.connect(path)) as migrated:
+            self.assertEqual(
+                (task_id, "normal"),
+                migrated.execute("SELECT id,creation_mode FROM tasks WHERE id=?", (task_id,)).fetchone(),
+            )
+            self.assertEqual("ok", migrated.execute("PRAGMA integrity_check").fetchone()[0])
+            self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
+
+    def test_version_eleven_task_details_migration_preserves_owned_relations(self):
+        path = self.database_path("task-details-flow")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate(target_version=11)
+        with closing(sqlite3.connect(path)) as connection:
+            connection.execute("PRAGMA foreign_keys=ON")
+            project_id = connection.execute("INSERT INTO projects(title) VALUES ('Titan')").lastrowid
+            task_id = connection.execute(
+                "INSERT INTO tasks(project_id,title,scheduled_date,lifecycle_status,creation_mode) VALUES (?,?,?,'in_progress','draft')",
+                (project_id, "Preserve Details", "2026-08-21"),
+            ).lastrowid
+            connection.execute(
+                "INSERT INTO task_project_links(task_id,project_id,position) VALUES (?,?,1)",
+                (task_id, project_id),
+            )
+            checklist_id = connection.execute(
+                "INSERT INTO task_checklist_items(task_id,title,position) VALUES (?,?,0)",
+                (task_id, "Preserve checklist"),
+            ).lastrowid
+            blocker_id = connection.execute(
+                "INSERT INTO blockers(task_id,type,description) VALUES (?,'other','Preserve blocker')",
+                (task_id,),
+            ).lastrowid
+            connection.commit()
+
+        result = runner.migrate()
+        self.assertEqual((12, 13), result.applied)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        with closing(sqlite3.connect(path)) as migrated:
+            migrated.execute("PRAGMA foreign_keys=ON")
+            self.assertEqual(
+                (task_id, "in_progress", "draft"),
+                migrated.execute(
+                    "SELECT id,lifecycle_status,creation_mode FROM tasks WHERE id=?", (task_id,)
+                ).fetchone(),
+            )
+            self.assertEqual((checklist_id, task_id), migrated.execute(
+                "SELECT id,task_id FROM task_checklist_items WHERE id=?", (checklist_id,)
+            ).fetchone())
+            self.assertEqual((blocker_id, task_id), migrated.execute(
+                "SELECT id,task_id FROM blockers WHERE id=?", (blocker_id,)
+            ).fetchone())
+            migrated.execute("UPDATE tasks SET lifecycle_status='paused' WHERE id=?", (task_id,))
+            self.assertEqual("paused", migrated.execute(
+                "SELECT lifecycle_status FROM tasks WHERE id=?", (task_id,)
+            ).fetchone()[0])
+            self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
+
+    def test_version_twelve_complete_task_migration_preserves_task_relations(self):
+        path = self.database_path("complete-task-flow")
+        runner = MigrationRunner(ConnectionFactory(path))
+        runner.migrate(target_version=12)
+        with closing(sqlite3.connect(path)) as connection:
+            connection.execute("PRAGMA foreign_keys=ON")
+            project_id = connection.execute("INSERT INTO projects(title) VALUES ('Titan')").lastrowid
+            task_id = connection.execute(
+                "INSERT INTO tasks(project_id,title,scheduled_date,lifecycle_status,planned_minutes) VALUES (?,?,?,'paused',?)",
+                (project_id, "Preserve Completion", "2026-08-21", 244),
+            ).lastrowid
+            connection.execute(
+                "INSERT INTO task_project_links(task_id,project_id,position) VALUES (?,?,1)",
+                (task_id, project_id),
+            )
+            checklist_id = connection.execute(
+                "INSERT INTO task_checklist_items(task_id,title,position) VALUES (?,?,0)",
+                (task_id, "Preserve checklist"),
+            ).lastrowid
+            connection.commit()
+
+        result = runner.migrate()
+        self.assertEqual((13,), result.applied)
+        self.paths.extend((result.backup.database_path, result.backup.manifest_path))
+        with closing(sqlite3.connect(path)) as migrated:
+            self.assertEqual(
+                (task_id, "paused", 244, None, None),
+                migrated.execute(
+                    "SELECT id,lifecycle_status,planned_minutes,total_time_minutes,active_time_minutes FROM tasks WHERE id=?",
+                    (task_id,),
+                ).fetchone(),
+            )
+            self.assertEqual((task_id, project_id), migrated.execute(
+                "SELECT task_id,project_id FROM task_project_links WHERE task_id=?", (task_id,)
+            ).fetchone())
+            self.assertEqual((checklist_id, task_id), migrated.execute(
+                "SELECT id,task_id FROM task_checklist_items WHERE id=?", (checklist_id,)
+            ).fetchone())
+            self.assertEqual("ok", migrated.execute("PRAGMA integrity_check").fetchone()[0])
             self.assertEqual([], migrated.execute("PRAGMA foreign_key_check").fetchall())
 
 

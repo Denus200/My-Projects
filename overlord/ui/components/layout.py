@@ -50,41 +50,9 @@ def page_heading(title: str, subtitle: str, tokens: ThemeTokens, actions: Iterab
     )
 
 
-def page_header(
-    title: str,
-    tokens: ThemeTokens,
-    *,
-    subtitle: str | None = None,
-    actions: Iterable[ft.Control] = (),
-    display_name: str | None = None,
-) -> ft.Row:
-    """Shared, non-sticky header used inside every main page scroll surface."""
+def profile_trigger(tokens: ThemeTokens, *, display_name: str | None = None) -> ft.Semantics:
+    """Canonical global profile trigger used by standard and feature headers."""
     resolved_name = display_name or ui_text("profile.display_name")
-    left_controls: list[ft.Control] = [
-        ft.Text(
-            title,
-            size=tokens.text_title + tokens.space_1,
-            weight=ft.FontWeight.W_700,
-            color=tokens.text_primary,
-            max_lines=1,
-            overflow=ft.TextOverflow.ELLIPSIS,
-            style=ft.TextStyle(height=1.15),
-            data={"role": "page-header-title"},
-        )
-    ]
-    if subtitle:
-        left_controls.append(
-            ft.Text(
-                subtitle,
-                size=tokens.text_body,
-                color=tokens.text_secondary,
-                max_lines=2,
-                overflow=ft.TextOverflow.ELLIPSIS,
-                style=ft.TextStyle(height=1.2),
-                data={"role": "page-header-subtitle"},
-            )
-        )
-
     chevron = lucide_icon(
         IconName.CHEVRON,
         color=tokens.profile_trigger_foreground,
@@ -136,12 +104,48 @@ def page_header(
             "avatar_size": 32,
         },
     )
-    profile_control = ft.Semantics(
+    return ft.Semantics(
         content=profile_surface,
         label=ui_text("profile.menu"),
         button=True,
     )
-    right_controls = [*actions, profile_control]
+
+
+def page_header(
+    title: str,
+    tokens: ThemeTokens,
+    *,
+    subtitle: str | None = None,
+    actions: Iterable[ft.Control] = (),
+    display_name: str | None = None,
+) -> ft.Row:
+    """Shared, non-sticky header used inside every main page scroll surface."""
+    left_controls: list[ft.Control] = [
+        ft.Text(
+            title,
+            size=tokens.text_title + tokens.space_1,
+            weight=ft.FontWeight.W_700,
+            color=tokens.text_primary,
+            max_lines=1,
+            overflow=ft.TextOverflow.ELLIPSIS,
+            style=ft.TextStyle(height=1.15),
+            data={"role": "page-header-title"},
+        )
+    ]
+    if subtitle:
+        left_controls.append(
+            ft.Text(
+                subtitle,
+                size=tokens.text_body,
+                color=tokens.text_secondary,
+                max_lines=2,
+                overflow=ft.TextOverflow.ELLIPSIS,
+                style=ft.TextStyle(height=1.2),
+                data={"role": "page-header-subtitle"},
+            )
+        )
+
+    right_controls = [*actions, profile_trigger(tokens, display_name=display_name)]
     return ft.Row(
         [
             ft.Column(
@@ -173,6 +177,7 @@ def page_container(
     subtitle: str | None = None,
     actions: Iterable[ft.Control] = (),
     content_spacing: int | float | None = None,
+    header_gap: int | float | None = None,
     page_id: str,
     role: str = "global-page-container",
 ) -> ft.ListView:
@@ -188,7 +193,7 @@ def page_container(
                 page_header(title, tokens, subtitle=subtitle, actions=actions),
                 body,
             ],
-            spacing=tokens.space_6,
+            spacing=tokens.space_6 if header_gap is None else header_gap,
         ),
         padding=ft.Padding.symmetric(horizontal=tokens.space_6, vertical=tokens.space_4),
         data={
@@ -209,6 +214,44 @@ def page_container(
             "page": page_id,
             "horizontal_padding": tokens.space_6,
             "vertical_padding": tokens.space_4,
-            "header_gap": tokens.space_6,
+            "header_gap": tokens.space_6 if header_gap is None else header_gap,
+        },
+    )
+
+
+def workspace_page(
+    header: ft.Control,
+    toolbar: ft.Control,
+    view_host: ft.Control,
+    tokens: ThemeTokens,
+    *,
+    page_id: str,
+    content_spacing: int | float | None = None,
+) -> ft.Container:
+    """Viewport-filling page whose working view owns the remaining space."""
+    header.expand = False
+    toolbar.expand = False
+    view_host.expand = True
+    workspace_column = ft.Column(
+        [header, toolbar, view_host],
+        spacing=tokens.space_4 if content_spacing is None else content_spacing,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        expand=True,
+        data={"role": "workspace-page-content", "page": page_id},
+    )
+    return ft.Container(
+        workspace_column,
+        padding=ft.Padding.symmetric(
+            horizontal=tokens.space_6,
+            vertical=tokens.space_4,
+        ),
+        expand=True,
+        data={
+            "role": "workspace-page-container",
+            "layout": "workspace-page",
+            "page": page_id,
+            "horizontal_padding": tokens.space_6,
+            "vertical_padding": tokens.space_4,
+            "scroll_owner": "view-host",
         },
     )

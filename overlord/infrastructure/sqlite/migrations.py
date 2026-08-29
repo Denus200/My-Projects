@@ -530,6 +530,321 @@ def _migration_0009(connection: sqlite3.Connection) -> None:
     )
 
 
+def _migration_0010(connection: sqlite3.Connection) -> None:
+    """Add the normalized Projects foundation without discarding legacy links."""
+    _add_column(
+        connection,
+        "projects",
+        "color TEXT NOT NULL DEFAULT '#F1ECEF' CHECK (length(color) = 7 AND substr(color, 1, 1) = '#')",
+    )
+    _add_column(
+        connection,
+        "projects",
+        "favorite INTEGER NOT NULL DEFAULT 0 CHECK (favorite IN (0,1))",
+    )
+    connection.execute(
+        "CREATE INDEX idx_projects_favorite_status ON projects(favorite DESC, status, updated_at DESC)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE project_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'active'
+                CHECK (status IN ('active','completed','archived')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT,
+            archived_at TEXT
+        )
+        """
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX ux_project_plans_one_active ON project_plans(project_id) WHERE status='active'"
+    )
+    connection.execute(
+        "CREATE INDEX idx_project_plans_project_status ON project_plans(project_id,status,updated_at DESC)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE project_stages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_plan_id INTEGER NOT NULL REFERENCES project_plans(id) ON DELETE CASCADE,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'planned'
+                CHECK (status IN ('planned','in_progress','completed','archived')),
+            position INTEGER NOT NULL CHECK (position >= 0),
+            start_date TEXT,
+            end_date TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            archived_at TEXT,
+            UNIQUE (project_plan_id, position)
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_project_stages_project_plan ON project_stages(project_id,project_plan_id,position)"
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER project_stages_project_guard_insert
+        BEFORE INSERT ON project_stages
+        WHEN NOT EXISTS (
+            SELECT 1 FROM project_plans
+            WHERE id=NEW.project_plan_id AND project_id=NEW.project_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Stage Project must match its Project Plan.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER project_stages_project_guard_update
+        BEFORE UPDATE OF project_plan_id,project_id ON project_stages
+        WHEN NOT EXISTS (
+            SELECT 1 FROM project_plans
+            WHERE id=NEW.project_plan_id AND project_id=NEW.project_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Stage Project must match its Project Plan.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE task_project_links (
+            task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            stage_id INTEGER REFERENCES project_stages(id) ON DELETE SET NULL,
+            position INTEGER NOT NULL CHECK (position BETWEEN 1 AND 4),
+            linked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (task_id, project_id),
+            UNIQUE (task_id, position)
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_task_project_links_project ON task_project_links(project_id,task_id)"
+    )
+    connection.execute(
+        "CREATE INDEX idx_task_project_links_stage ON task_project_links(stage_id,task_id) WHERE stage_id IS NOT NULL"
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER task_project_links_max_four
+        BEFORE INSERT ON task_project_links
+        WHEN (SELECT COUNT(*) FROM task_project_links WHERE task_id=NEW.task_id) >= 4
+        BEGIN
+            SELECT RAISE(ABORT, 'A Task may belong to at most 4 Projects.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER task_project_links_stage_guard_insert
+        BEFORE INSERT ON task_project_links
+        WHEN NEW.stage_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM project_stages
+            WHERE id=NEW.stage_id AND project_id=NEW.project_id AND status!='archived'
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Task Stage must belong to the linked Project.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER task_project_links_stage_guard_update
+        BEFORE UPDATE OF project_id,stage_id ON task_project_links
+        WHEN NEW.stage_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM project_stages
+            WHERE id=NEW.stage_id AND project_id=NEW.project_id AND status!='archived'
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Task Stage must belong to the linked Project.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO task_project_links (task_id,project_id,position,linked_at)
+        SELECT id,project_id,1,created_at
+        FROM tasks
+        WHERE project_id IS NOT NULL
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE project_notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            relative_path TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            archived_at TEXT,
+            UNIQUE (project_id, relative_path)
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_project_notes_project ON project_notes(project_id,archived_at,updated_at DESC)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE project_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            display_name TEXT NOT NULL,
+            relative_path TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL DEFAULT 0 CHECK (size_bytes >= 0),
+            added_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            archived_at TEXT,
+            UNIQUE (project_id, relative_path)
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_project_files_project ON project_files(project_id,archived_at,added_at DESC)"
+    )
+
+
+def _migration_0011(connection: sqlite3.Connection) -> None:
+    """Persist Create Task draft intent and atomic nested Checklists."""
+    _add_column(
+        connection,
+        "tasks",
+        "creation_mode TEXT NOT NULL DEFAULT 'normal' CHECK (creation_mode IN ('normal','draft'))",
+    )
+    connection.execute(
+        "CREATE INDEX idx_tasks_creation_mode ON tasks(creation_mode,lifecycle_status,updated_at DESC)"
+    )
+    connection.execute(
+        """
+        CREATE TABLE task_checklist_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            parent_item_id INTEGER REFERENCES task_checklist_items(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0,1)),
+            position INTEGER NOT NULL CHECK (position >= 0),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    connection.execute(
+        "CREATE INDEX idx_task_checklist_items_task ON task_checklist_items(task_id,parent_item_id,position)"
+    )
+    connection.execute(
+        "CREATE UNIQUE INDEX ux_task_checklist_items_position ON task_checklist_items(task_id,COALESCE(parent_item_id,0),position)"
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER task_checklist_parent_guard_insert
+        BEFORE INSERT ON task_checklist_items
+        WHEN NEW.parent_item_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM task_checklist_items
+            WHERE id=NEW.parent_item_id AND task_id=NEW.task_id
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Checklist parent must belong to the same Task.');
+        END
+        """
+    )
+    connection.execute(
+        """
+        CREATE TRIGGER task_checklist_parent_guard_update
+        BEFORE UPDATE OF task_id,parent_item_id ON task_checklist_items
+        WHEN NEW.parent_item_id IS NOT NULL AND (
+            NEW.parent_item_id=NEW.id OR NOT EXISTS (
+                SELECT 1 FROM task_checklist_items
+                WHERE id=NEW.parent_item_id AND task_id=NEW.task_id
+            )
+        )
+        BEGIN
+            SELECT RAISE(ABORT, 'Checklist parent must belong to the same Task.');
+        END
+        """
+    )
+
+
+def _migration_0012(connection: sqlite3.Connection) -> None:
+    """Add the persisted paused Task lifecycle without losing Task relations."""
+    connection.execute(
+        """
+        CREATE TABLE tasks_details_v2 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER REFERENCES projects(id) ON DELETE RESTRICT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            scheduled_date TEXT NOT NULL,
+            planned_minutes INTEGER,
+            status TEXT NOT NULL DEFAULT 'planned',
+            comment TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            lifecycle_status TEXT CHECK (lifecycle_status IN ('backlog','planned','in_progress','paused','completed','cancelled')),
+            definition_of_done TEXT,
+            next_action TEXT,
+            importance INTEGER CHECK (importance IN (0,1)),
+            urgency INTEGER CHECK (urgency IN (0,1)),
+            started_at TEXT,
+            completed_at TEXT,
+            archived_at TEXT,
+            milestone_id INTEGER REFERENCES milestones(id) ON DELETE SET NULL,
+            schedule_start_date TEXT,
+            schedule_start_time TEXT,
+            schedule_end_date TEXT,
+            schedule_end_time TEXT,
+            deadline_at TEXT,
+            creation_mode TEXT NOT NULL DEFAULT 'normal' CHECK (creation_mode IN ('normal','draft'))
+        )
+        """
+    )
+    connection.execute(
+        """
+        INSERT INTO tasks_details_v2 (
+            id,project_id,title,description,scheduled_date,planned_minutes,status,comment,
+            created_at,updated_at,lifecycle_status,definition_of_done,next_action,importance,
+            urgency,started_at,completed_at,archived_at,milestone_id,schedule_start_date,
+            schedule_start_time,schedule_end_date,schedule_end_time,deadline_at,creation_mode
+        )
+        SELECT
+            id,project_id,title,description,scheduled_date,planned_minutes,status,comment,
+            created_at,updated_at,lifecycle_status,definition_of_done,next_action,importance,
+            urgency,started_at,completed_at,archived_at,milestone_id,schedule_start_date,
+            schedule_start_time,schedule_end_date,schedule_end_time,deadline_at,creation_mode
+        FROM tasks
+        """
+    )
+    connection.execute("DROP TABLE tasks")
+    connection.execute("ALTER TABLE tasks_details_v2 RENAME TO tasks")
+    connection.execute("CREATE INDEX idx_tasks_scheduled_date ON tasks(scheduled_date)")
+    connection.execute("CREATE INDEX idx_tasks_project_id ON tasks(project_id)")
+    connection.execute("CREATE INDEX idx_tasks_lifecycle_completed ON tasks(lifecycle_status,completed_at)")
+    connection.execute("CREATE INDEX idx_tasks_project_lifecycle ON tasks(project_id,lifecycle_status,updated_at)")
+    connection.execute("CREATE INDEX idx_tasks_milestone_lifecycle ON tasks(milestone_id,lifecycle_status)")
+    connection.execute("CREATE INDEX idx_tasks_schedule_start ON tasks(schedule_start_date,lifecycle_status)")
+    connection.execute("CREATE INDEX idx_tasks_schedule_end ON tasks(schedule_end_date,lifecycle_status)")
+    connection.execute("CREATE INDEX idx_tasks_deadline ON tasks(deadline_at,lifecycle_status)")
+    connection.execute("CREATE INDEX idx_tasks_creation_mode ON tasks(creation_mode,lifecycle_status,updated_at DESC)")
+
+
+def _migration_0013(connection: sqlite3.Connection) -> None:
+    """Add nullable manual completion-time measurements to Tasks."""
+    connection.execute(
+        "ALTER TABLE tasks ADD COLUMN total_time_minutes INTEGER CHECK (total_time_minutes > 0)"
+    )
+    connection.execute(
+        "ALTER TABLE tasks ADD COLUMN active_time_minutes INTEGER CHECK (active_time_minutes > 0)"
+    )
+
+
 MIGRATIONS = (
     Migration(1, "baseline", "legacy-project-task-schema-v1", _migration_0001),
     Migration(2, "settings", "typed-singleton-settings-v1", _migration_0002),
@@ -555,6 +870,31 @@ MIGRATIONS = (
         "task_day_ordering",
         "persistent-task-position-per-scheduled-day-v1",
         _migration_0009,
+    ),
+    Migration(
+        10,
+        "projects_foundation",
+        "project-color-favorite-plan-stage-task-links-workspace-v1",
+        _migration_0010,
+    ),
+    Migration(
+        11,
+        "create_task_flow",
+        "task-creation-mode-nested-checklist-v1",
+        _migration_0011,
+    ),
+    Migration(
+        12,
+        "task_details_flow",
+        "task-details-paused-lifecycle-stable-checklist-delete-v1",
+        _migration_0012,
+        requires_foreign_keys_off=True,
+    ),
+    Migration(
+        13,
+        "complete_task_flow",
+        "nullable-total-active-task-minutes-v1",
+        _migration_0013,
     ),
 )
 

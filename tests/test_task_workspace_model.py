@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from types import SimpleNamespace
 
 from overlord.app.read_models import TaskListItem
@@ -9,12 +9,15 @@ from overlord.modules.tasks.domain import Task, TaskBoardColumn, TaskLifecycle
 from overlord.ui.components.task_workspace_controller import TaskWorkspaceController
 from overlord.ui.components.task_ordering import TaskOrderController, moved_task_ids
 from overlord.ui.components.task_workspace_model import (
+    expanded_board_column_order,
     group_board_items,
+    group_kanban_items,
     merged_today_order,
     month_shift,
     month_weeks,
     moved_card_orders,
     normalized_column_order,
+    normalized_kanban_column_order,
     reconcile_card_order,
     reordered_columns,
     scheduled_items_for_day,
@@ -29,6 +32,7 @@ def _item(
     *,
     scheduled_for: date | None = None,
     lifecycle: TaskLifecycle = TaskLifecycle.PLANNED,
+    open_blockers: int = 0,
 ) -> TaskListItem:
     timestamp = datetime(2026, 8, 13, 9, 0)
     return TaskListItem(
@@ -42,6 +46,7 @@ def _item(
             schedule_start_date=scheduled_for,
         ),
         None,
+        open_blockers=open_blockers,
     )
 
 
@@ -69,6 +74,28 @@ class TaskWorkspaceModelTests(unittest.TestCase):
         self.assertEqual(date(2026, 9, 6), weeks[-1][-1])
         self.assertTrue(all(len(week) == 7 for week in weeks))
 
+    def test_month_calendar_matrix_handles_row_counts_leap_years_and_year_edges(self):
+        four_rows = month_weeks(date(2021, 2, 1), 0)
+        self.assertEqual(4, len(four_rows))
+        self.assertEqual(date(2021, 2, 1), four_rows[0][0])
+        self.assertEqual(date(2021, 2, 28), four_rows[-1][-1])
+
+        leap_year = month_weeks(date(2024, 2, 14), 0)
+        self.assertEqual(date(2024, 1, 29), leap_year[0][0])
+        self.assertIn(date(2024, 2, 29), tuple(day for week in leap_year for day in week))
+        self.assertEqual(date(2024, 3, 3), leap_year[-1][-1])
+
+        six_rows = month_weeks(date(2020, 8, 1), 0)
+        self.assertEqual(6, len(six_rows))
+        self.assertEqual(date(2020, 7, 27), six_rows[0][0])
+        self.assertEqual(date(2020, 9, 6), six_rows[-1][-1])
+
+        sunday_start = month_weeks(date(2026, 2, 1), 0)
+        self.assertEqual(date(2026, 1, 26), sunday_start[0][0])
+        self.assertEqual(date(2026, 3, 1), sunday_start[-1][-1])
+        self.assertEqual(date(2027, 1, 1), month_shift(date(2026, 12, 31), 1))
+        self.assertEqual(date(2025, 12, 1), month_shift(date(2026, 1, 1), -1))
+
     def test_query_filter_projection_preserves_project_variants(self):
         self.assertEqual({"search": "alpha"}, task_query_filters("alpha", "all"))
         self.assertEqual(
@@ -95,6 +122,33 @@ class TaskWorkspaceModelTests(unittest.TestCase):
         self.assertEqual((today,), grouped[TaskBoardColumn.IN_PROGRESS])
         self.assertEqual((completed,), grouped[TaskBoardColumn.COMPLETED])
         self.assertEqual((today, completed), scheduled_items_for_day(items, selected_day))
+
+    def test_reference_kanban_groups_derived_attention_without_new_domain_state(self):
+        selected_day = date(2026, 8, 13)
+        blocked = _item(1, open_blockers=1)
+        paused = _item(2, lifecycle=TaskLifecycle.PAUSED)
+        archived = _item(3, scheduled_for=selected_day - timedelta(days=1))
+        planned = _item(4)
+        completed = _item(5, lifecycle=TaskLifecycle.COMPLETED)
+        grouped = group_kanban_items(
+            (blocked, paused, archived, planned, completed),
+            datetime(2026, 8, 13, 12, 0),
+        )
+        self.assertEqual((planned,), grouped[TaskBoardColumn.PLANNED.value])
+        self.assertEqual((blocked, paused, archived), grouped["needs_attention"])
+        self.assertEqual((completed,), grouped[TaskBoardColumn.COMPLETED.value])
+        self.assertEqual(
+            ["planned", "in_progress", "needs_attention", "completed"],
+            normalized_kanban_column_order(
+                ["planned", "in_progress", "missed", "completed", "archive"]
+            ),
+        )
+        self.assertEqual(
+            ["missed", "archive", "planned", "in_progress", "completed"],
+            expanded_board_column_order(
+                ["needs_attention", "planned", "in_progress", "completed"]
+            ),
+        )
 
     def test_column_and_card_order_transformations_preserve_existing_rules(self):
         self.assertEqual(

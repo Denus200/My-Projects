@@ -53,28 +53,39 @@ class FoundationPresentationTests(unittest.TestCase):
         self.path.unlink(missing_ok=True)
 
     def test_all_route_pages_construct_with_flet_084(self):
-        controls = [
+        tasks = build_tasks(self.services, LIGHT_TOKENS, AppSessionState(), self.noop, self.noop)
+        scrolling_pages = [
             build_dashboard(self.services, LIGHT_TOKENS, "/dashboard", self.noop, self.noop, self.noop),
-            build_tasks(self.services, LIGHT_TOKENS, AppSessionState(), self.noop, self.noop),
             build_projects(self.services, LIGHT_TOKENS, "/projects", self.noop, self.noop, self.noop),
             build_projects(self.services, LIGHT_TOKENS, f"/projects/{self.project.id}", self.noop, self.noop, self.noop),
             build_cycles(self.services, LIGHT_TOKENS, "/cycles", self.noop, self.noop, self.noop),
             build_cycles(self.services, LIGHT_TOKENS, f"/cycles/{self.cycle.id}", self.noop, self.noop, self.noop),
             build_settings(self.services, LIGHT_TOKENS, self.noop, self.noop),
         ]
+        controls = [tasks, *scrolling_pages]
         self.assertTrue(all(isinstance(control, ft.Control) for control in controls))
-        self.assertTrue(all(isinstance(control, ft.ListView) for control in controls))
-        self.assertTrue(all(control.data["layout"] == "global-page" for control in controls))
-        padding_layers = [_role(control, "global-page-padding-layer")[0] for control in controls]
+        self.assertTrue(all(isinstance(control, ft.ListView) for control in scrolling_pages))
+        self.assertTrue(all(control.data["layout"] == "global-page" for control in scrolling_pages))
+        padding_layers = [_role(control, "global-page-padding-layer")[0] for control in scrolling_pages]
         self.assertTrue(all(layer.padding.left == 24 and layer.padding.right == 24 for layer in padding_layers))
         self.assertTrue(all(layer.padding.top == 16 and layer.padding.bottom == 16 for layer in padding_layers))
-        self.assertTrue(all(control.padding == 0 for control in controls))
+        self.assertTrue(all(control.padding == 0 for control in scrolling_pages))
+        self.assertIsInstance(tasks, ft.Container)
+        self.assertEqual("workspace-page", tasks.data["layout"])
+        self.assertTrue(tasks.expand)
+        self.assertEqual((24, 24, 16, 16), (
+            tasks.padding.left,
+            tasks.padding.right,
+            tasks.padding.top,
+            tasks.padding.bottom,
+        ))
+        self.assertTrue(_role(tasks, "task-view-host")[0].expand)
         self.assertTrue(all(len(_role(control, "page-header")) == 1 for control in controls))
         self.assertTrue(all(len(_role(control, "user-menu-trigger")) == 1 for control in controls))
 
     def test_tasks_uses_title_only_shared_header(self):
         control = build_tasks(self.services, LIGHT_TOKENS, AppSessionState(), self.noop, self.noop)
-        self.assertEqual("Tasks", _role(control, "page-header-title")[0].value)
+        self.assertEqual("My Tasks", _role(control, "page-header-title")[0].value)
         self.assertEqual([], _role(control, "page-header-subtitle"))
 
     def test_lucide_registry_assets_are_packaged_and_tintable(self):

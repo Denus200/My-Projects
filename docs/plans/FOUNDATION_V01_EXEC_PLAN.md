@@ -5,8 +5,8 @@
 - Owner: Overlord repository
 - Branch: `foundation-v0.1`
 - Approval: Approved for implementation
-- Last update: 2026-08-14
-- Current phase: Foundation complete; date-driven Tasks Stages 1–2 and Presentation boundary refactor implemented
+- Last update: 2026-08-21
+- Current phase: Foundation complete; Task Card/three-day Dashboard and Projects foundation/redesign implemented
 
 ## Source-of-Truth Order
 
@@ -42,7 +42,7 @@ Presentation → Application → Domain; Infrastructure implements ports. Domain
 
 ## Data, Migration, and Recovery
 
-`0001_baseline` adopts or creates the legacy schema and ledger; `0002_settings` adds typed preferences; `0003_task_planning_attention` adds canonical Task lifecycle, historical planning, and Blockers; `0004_project_task_workflows` adds Project workflow metadata; `0005_cycles_milestones_outcomes` adds Cycles, Milestones, junctions, and Weekly Outcomes; `0006_standalone_tasks` makes Task-to-Project optional without changing existing records; `0007_interface_locale` adds the persistent `en`/`ru` interface locale; `0008_date_driven_tasks` adds the canonical Task schedule and migrates current legacy plan dates without deleting history; `0009_task_day_ordering` adds persistent per-day presentation order for scheduled Tasks. A validated SQLite API backup precedes any pending migration batch. Unknown legacy shapes and migration checksum drift fail closed.
+`0001_baseline` adopts or creates the legacy schema and ledger; `0002_settings` adds typed preferences; `0003_task_planning_attention` adds canonical Task lifecycle, historical planning, and Blockers; `0004_project_task_workflows` adds Project workflow metadata; `0005_cycles_milestones_outcomes` adds Cycles, Milestones, junctions, and Weekly Outcomes; `0006_standalone_tasks` makes Task-to-Project optional without changing existing records; `0007_interface_locale` adds the persistent `en`/`ru` interface locale; `0008_date_driven_tasks` adds the canonical Task schedule and migrates current legacy plan dates without deleting history; `0009_task_day_ordering` adds persistent per-day presentation order for scheduled Tasks; `0010_projects_foundation` adds Project color/favorite state, Project Plans and Stages, normalized zero-to-four Task links, and local-workspace metadata while migrating legacy single-Project links; `0011_create_task_flow` adds explicit normal/draft creation intent and nested Task Checklist persistence; `0012_task_details_flow` adds the Paused lifecycle value while preserving Task relations; `0013_complete_task_flow` adds nullable manual Total Time and Active Time values. A validated SQLite API backup precedes any pending migration batch. Unknown legacy shapes and migration checksum drift fail closed.
 
 ## Design System
 
@@ -66,6 +66,7 @@ The approved Crimson Focus light/dark palettes map to centralized semantic token
 ### Phase 2 — Dashboard
 
 - [x] Add canonical lifecycle, plans, histories, Blockers, aggregate query, slots, weekly bars, cycle/attention cards, and factual unavailable states.
+- [x] Add the approved Weather card with fixed Merefa Open-Meteo data, centralized WMO normalization, local normalized cache/offline fallback, and non-blocking 30-minute refresh without resize/Sidebar requests.
 
 ### Phase 3 — Project and Task workflows
 
@@ -87,10 +88,22 @@ The approved Crimson Focus light/dark palettes map to centralized semantic token
 
 - [x] Remove hidden progressive disclosure from Task creation and show one complete scheduling form.
 - [x] Add contextual creation for Planned, Today, and individual calendar dates.
-- [x] Add the five-column derived Kanban view.
-- [x] Add navigable week and month calendar views with inclusive-range projection.
+- [x] Add the four-column My Tasks/Kanban presentation, grouping canonical Not completed/Archive placement plus Paused/open-blocker conditions into non-assignable Needs Attention.
+- [x] Redesign Week as a seven-day fixed-width horizontal board with independent day scrolling, contextual creation, filtered counts, and shared expandable Week/Month date-navigation Tabs.
+- [x] Redesign Month as a responsive Monday-first calendar matrix with real adjacent dates, dynamic today treatment, fixed-height independently scrolling cells, shared compact Task Cards, contextual creation, and normalized filters.
 - [x] Keep Project and 12-week Cycle membership as Task relationships and show them on cards.
 - [x] Keep recurring actions outside Tasks.
+
+### Projects foundation and redesign
+
+- [x] Persist Project color, Favorite, lifecycle state, Project Plans, and ordered Stages.
+- [x] Normalize Task-to-Project membership with zero-to-four unique links and one optional same-Project Stage per link.
+- [x] Preserve legacy single-Project associations through forward migration `0010_projects_foundation`.
+- [x] Redesign Create Task as one state-driven modal with progressive advanced options, shared date/date-time overlays, zero-to-four Project links, per-Project Stages, nullable duration estimates, normal/draft creation intent, and nested Checklist persistence through `0011_create_task_flow`.
+- [x] Redesign Task Details as one shared state-driven modal with atomic Task/Project/Stage/Checklist editing, stable Checklist IDs, Planned/In progress/Blocked/Paused/Completed behavior, shared pickers, and confirmed relationally safe deletion through `0012_task_details_flow`.
+- [x] Route Dashboard, Task Details, Tasks/Kanban, and Project Tasks through one Complete Task modal; atomically persist completion and optional Estimated/Total/Active minutes through `0013_complete_task_flow`.
+- [x] Connect persisted Project colors to the shared Task Card without creating a Projects-only card implementation.
+- [x] Implement responsive Project cards, explicit post-create routing, shared detail tabs, conditional 12-week context, Project Tasks by Stage, local Notes & Files, and reversible Archive behavior.
 
 ## Test Matrix
 
@@ -111,6 +124,7 @@ Windows icon and packaging; permanent Task Detail container; decorative animatio
 - 2026-08-06: Foundation v0.1 plan approved in full.
 - 2026-08-13: Date-driven Task scheduling Stage 1 approved; the daily slot model is superseded.
 - 2026-08-14: Approved the behavior-preserving Presentation refactor: typed validation metadata, explicit design-system ownership, Task workspace/controller boundaries, shared per-day ordering ownership, and one navigation resolution/commit pipeline. No persistence boundary or product decision changed.
+- 2026-08-21: Approved normalized multi-Project Task membership, Project-owned Plans and Stages, persistent Project color/favorite state, local Project workspaces, and the reference-driven Projects redesign. Project Plans remain distinct from global 12-week Cycles.
 
 ## Change Log
 
@@ -127,3 +141,12 @@ Windows icon and packaging; permanent Task Detail container; decorative animatio
 - 2026-08-13: Replaced Dashboard Today with a three-day board and added migration `0009_task_day_ordering` for explicit same-day Task ordering.
 - 2026-08-13: Replaced the Foundation Tasks list with one Kanban/week/month workspace, contextual creation, a fully visible Task form, and editable Cycle relationships.
 - 2026-08-14: Refactored Presentation incrementally without schema or persisted-format changes. Validation routing no longer depends on exception prose; design roles are explicit; Task workspace state/projections/controllers are separated; Dashboard and Tasks share per-day ordering ownership; synchronous refresh and asynchronous navigation now share route preparation, resolution, and commit behavior.
+- 2026-08-21: Added migration `0010_projects_foundation`, preserved legacy Project links, introduced Project Plans/Stages and local workspace metadata, connected real Project colors to the shared Task Card, and implemented the current Projects list/create/detail/overview/plan/tasks/notes/archive reference states.
+- 2026-08-21: Added migration `0011_create_task_flow` and completed Create Task tranche 1 with a single progressive modal, shared calendar overlays, normalized Project/Stage assignments, nullable hour/minute estimates, explicit draft creation intent, atomic nested Checklists, and native reference-comparison captures. Task Details and Complete Task remain deferred.
+- 2026-08-21: Added migration `0012_task_details_flow` and completed Task Details tranche 2 with one Dashboard/Tasks/Project-deep-link editor, atomic lifecycle and relationship saves, stable-ID Checklist synchronization, Paused lifecycle support, Blocked derivation through open Blockers, confirmed Task deletion, and nine native captures. Complete Task remains deferred.
+- 2026-08-21: Added migration `0013_complete_task_flow` and completed Complete Task tranche 3 with one confirmation modal across Dashboard, Task Details, Tasks/Kanban, and Project Tasks; existing estimates are locked, missing estimates and independent manual Total/Active values are optional, confirmation is atomic, and six native captures cover the approved states.
+- 2026-08-21: Corrected the shared nullable duration control for three-digit hours and made the Dashboard three-day working lists lifecycle-aware: Planned/In progress and Completed remain visible, while Blocked and Paused retain their Task data but are excluded from actionable day lists.
+- 2026-08-22: Renamed Tasks to My Tasks and redesigned Kanban as a responsive four-column board with independent column scrolling, shared Task Cards and flows, session order preservation, normalized Project filtering, and a derived non-assignable Needs Attention grouping. No schema or domain state changed.
+- 2026-08-22: Redesigned My Tasks/Week as a reference-matched seven-day horizontal board with fixed 300-pixel columns, independent vertical Task lists, real-date placement, contextual per-day creation, Search/normalized Project filtering, and shared transient expandable Week/Month navigation. Schema, Domain, and Application boundaries remain unchanged.
+- 2026-08-22: Redesigned My Tasks/Month as a reference-matched responsive calendar grid with Monday–Sunday ordering, real adjacent dates, dynamic today highlighting, compact shared Task Cards, internal busy-day overflow, contextual creation, and shared details/completion/filter/navigation behavior. No migration or persistence boundary changed.
+- 2026-08-27: Connected the approved Dashboard Weather widget to Open-Meteo for fixed Merefa current conditions and five daily forecasts. Added centralized WMO normalization, a database-specific normalized JSON cache, stale/offline fallback, and an asynchronous 30-minute refresh loop; no schema or persisted business-data boundary changed.

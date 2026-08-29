@@ -50,7 +50,10 @@ class AppShell:
     def set_content(self, content: ft.Control) -> None:
         self.content_host.content = content
         data = getattr(content, "data", None)
-        if isinstance(data, dict) and data.get("layout") == "global-page":
+        if isinstance(data, dict) and data.get("layout") in {
+            "global-page",
+            "workspace-page",
+        }:
             self.body.padding = self._tokens.space_0
         else:
             self.body.padding = self._tokens.space_6

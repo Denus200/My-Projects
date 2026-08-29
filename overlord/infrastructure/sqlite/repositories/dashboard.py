@@ -17,7 +17,7 @@ class SqliteDashboardRepository:
                 SELECT schedule_start_date, COUNT(*) AS planned,
                        COUNT(CASE WHEN lifecycle_status='completed' THEN 1 END) AS completed
                 FROM tasks
-                WHERE schedule_start_date BETWEEN ? AND ?
+                WHERE creation_mode='normal' AND schedule_start_date BETWEEN ? AND ?
                 GROUP BY schedule_start_date
                 """,
                 (start.isoformat(), end.isoformat()),
@@ -32,8 +32,21 @@ class SqliteDashboardRepository:
             SELECT COUNT(*) AS planned,
                    COALESCE(SUM(CASE WHEN lifecycle_status='completed' THEN 1 ELSE 0 END),0) AS completed
             FROM tasks
-            WHERE schedule_start_date BETWEEN ? AND ?
+            WHERE creation_mode='normal' AND schedule_start_date BETWEEN ? AND ?
             """,
             (start.isoformat(), end.isoformat()),
         ).fetchone()
         return row["planned"], row["completed"]
+
+    def weekly_time_totals(self, start: date) -> tuple[int | None, int | None]:
+        end = start + timedelta(days=6)
+        row = self.connection.execute(
+            """
+            SELECT SUM(active_time_minutes) AS active_time_minutes,
+                   SUM(total_time_minutes) AS total_time_minutes
+            FROM tasks
+            WHERE creation_mode='normal' AND schedule_start_date BETWEEN ? AND ?
+            """,
+            (start.isoformat(), end.isoformat()),
+        ).fetchone()
+        return row["active_time_minutes"], row["total_time_minutes"]

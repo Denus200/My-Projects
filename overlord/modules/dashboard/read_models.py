@@ -46,6 +46,8 @@ class DashboardReadModel:
     attention: tuple[AttentionItem, ...]
     actual_time_label: str = "Not tracked yet"
     outcome_label: str = "Not set"
+    active_time_minutes: int | None = None
+    total_time_minutes: int | None = None
 
 
 def execution_score(originally_planned: int, completed: int) -> float | None:

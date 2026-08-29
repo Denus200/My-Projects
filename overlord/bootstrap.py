@@ -22,11 +22,21 @@ from overlord.modules.cycles.application import (
 )
 from overlord.app.services import ApplicationServices
 from overlord.modules.dashboard.application import GetDashboardQuery
+from overlord.modules.weather.application import WeatherService
 from overlord.modules.projects.application import (
+    AddProjectFile,
     ArchiveProject,
+    ChangeProjectPlanStatus,
+    ChangeProjectStageStatus,
+    CreateProjectPlan,
+    CreateProjectStage,
+    CreateProjectNote,
     CreateProject,
     GetProjectDetailQuery,
+    GetProjectWorkspaceQuery,
     ListProjectSummariesQuery,
+    ListProjectPlansQuery,
+    ListProjectStagesQuery,
     ListProjectsQuery,
     ProjectApplication,
     UpdateProject,
@@ -36,6 +46,7 @@ from overlord.modules.tasks.application import (
     ChangeTaskLifecycle,
     CompleteTask,
     CreateTask,
+    DeleteTask,
     GetTaskEditorQuery,
     ListTasksQuery,
     MoveTaskToBoardColumn,
@@ -45,8 +56,13 @@ from overlord.modules.tasks.application import (
     TaskApplication,
     ToggleTaskCompletionForDay,
     UpdateTask,
+    UpdateTaskDetails,
 )
 from overlord.infrastructure.logging import configure_logging
+from overlord.infrastructure.local_project_workspace import LocalProjectWorkspace
+from overlord.infrastructure.weather.cache import JsonWeatherCache
+from overlord.infrastructure.weather.config import MEREFA_WEATHER_CONFIG
+from overlord.infrastructure.weather.open_meteo import OpenMeteoWeatherProvider
 from overlord.infrastructure.sqlite.connection import ConnectionFactory
 from overlord.infrastructure.sqlite.migrations import MigrationResult, MigrationRunner
 from overlord.infrastructure.sqlite.unit_of_work import SqliteUnitOfWorkFactory
@@ -74,12 +90,18 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
         list(migrations.applied),
     )
     uow = SqliteUnitOfWorkFactory(factory)
+    project_workspace = LocalProjectWorkspace(path.parent / "project-workspaces")
+    weather_cache = path.with_name(f"{path.stem}-weather-cache.json")
     projects = ProjectApplication(
         CreateProject(uow), UpdateProject(uow), ArchiveProject(uow),
         ListProjectsQuery(uow), ListProjectSummariesQuery(uow), GetProjectDetailQuery(uow),
+        CreateProjectPlan(uow), ChangeProjectPlanStatus(uow), ListProjectPlansQuery(uow),
+        CreateProjectStage(uow), ChangeProjectStageStatus(uow), ListProjectStagesQuery(uow),
+        CreateProjectNote(uow, project_workspace), AddProjectFile(uow, project_workspace),
+        GetProjectWorkspaceQuery(uow, project_workspace),
     )
     tasks = TaskApplication(
-        CreateTask(uow), UpdateTask(uow), ChangeTaskLifecycle(uow),
+        CreateTask(uow), UpdateTask(uow), UpdateTaskDetails(uow), DeleteTask(uow), ChangeTaskLifecycle(uow),
         CompleteTask(uow), ReorderTasksForDay(uow), ToggleTaskCompletionForDay(uow),
         MoveTaskToBoardColumn(uow), OpenBlocker(uow), ResolveBlocker(uow), ListTasksQuery(uow),
         GetTaskEditorQuery(uow),
@@ -98,6 +120,11 @@ def bootstrap(database_path: str | Path = DEFAULT_DATABASE_PATH) -> BootstrapRes
             settings,
             GetDashboardQuery(uow),
             cycles,
+            WeatherService(
+                OpenMeteoWeatherProvider(MEREFA_WEATHER_CONFIG),
+                JsonWeatherCache(weather_cache),
+                location_name=MEREFA_WEATHER_CONFIG.location_name,
+            ),
         ),
         migrations,
     )

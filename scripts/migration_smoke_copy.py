@@ -36,6 +36,7 @@ def main() -> int:
     target = sqlite3.connect(target_path)
     try:
         source.row_factory = sqlite3.Row
+        source_user_version = source.execute("PRAGMA user_version").fetchone()[0]
         before_projects = [tuple(row) for row in source.execute(
             "SELECT id,title,description,status,created_at,updated_at FROM projects ORDER BY id"
         )]
@@ -59,7 +60,7 @@ def main() -> int:
             ).fetchall()
             evidence = {
                 "source_sha256": sha256(source_path),
-                "source_user_version": 0,
+                "source_user_version": source_user_version,
                 "migrated_user_version": migrated.execute("PRAGMA user_version").fetchone()[0],
                 "applied": list(result.applied),
                 "project_rows_preserved": before_projects == after_projects,
@@ -67,13 +68,38 @@ def main() -> int:
                 "integrity_check": migrated.execute("PRAGMA integrity_check").fetchone()[0],
                 "foreign_key_violations": len(migrated.execute("PRAGMA foreign_key_check").fetchall()),
                 "validated_pre_migration_backup": bool(result.backup),
+                "normalized_project_links": migrated.execute(
+                    "SELECT COUNT(*) FROM task_project_links"
+                ).fetchone()[0],
+                "normal_creation_modes": migrated.execute(
+                    "SELECT COUNT(*) FROM tasks WHERE creation_mode='normal'"
+                ).fetchone()[0],
+                "checklist_table": bool(migrated.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='task_checklist_items'"
+                ).fetchone()),
+                "paused_lifecycle_supported": "'paused'" in migrated.execute(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='tasks'"
+                ).fetchone()[0],
+                "completion_time_columns": {
+                    row[1] for row in migrated.execute("PRAGMA table_info(tasks)")
+                }.issuperset({"total_time_minutes", "active_time_minutes"}),
+                "completion_times_default_null": migrated.execute(
+                    "SELECT COUNT(*) FROM tasks WHERE total_time_minutes IS NOT NULL OR active_time_minutes IS NOT NULL"
+                ).fetchone()[0] == 0,
             }
         finally:
             migrated.close()
         if not all((
             evidence["project_rows_preserved"], evidence["task_rows_preserved"],
             evidence["integrity_check"] == "ok", evidence["foreign_key_violations"] == 0,
-            evidence["migrated_user_version"] == 6, evidence["validated_pre_migration_backup"],
+            evidence["migrated_user_version"] == 13,
+            evidence["validated_pre_migration_backup"],
+            evidence["normalized_project_links"] == sum(1 for row in before_tasks if row[1] is not None),
+            evidence["normal_creation_modes"] == len(before_tasks),
+            evidence["checklist_table"],
+            evidence["paused_lifecycle_supported"],
+            evidence["completion_time_columns"],
+            evidence["completion_times_default_null"],
         )):
             raise RuntimeError("Disposable production-copy migration validation failed.")
         print(json.dumps(evidence, indent=2))

@@ -12,8 +12,15 @@ from overlord.modules.cycles.domain import (
     WeeklyOutcome,
     WeeklyOutcomeStatus,
 )
-from overlord.modules.projects.domain import Project, ProjectStatus
-from overlord.modules.tasks.domain import Task, TaskLifecycle
+from overlord.modules.projects.domain import (
+    Project,
+    ProjectPlan,
+    ProjectPlanStatus,
+    ProjectStage,
+    ProjectStageStatus,
+    ProjectStatus,
+)
+from overlord.modules.tasks.domain import Task, TaskChecklistItem, TaskCreationMode, TaskLifecycle, TaskProjectLink
 
 
 def _datetime(value: str | None) -> datetime | None:
@@ -44,10 +51,16 @@ def _project(row: sqlite3.Row) -> Project:
         started_at=_datetime(row["started_at"]),
         completed_at=_datetime(row["completed_at"]),
         archived_at=_datetime(row["archived_at"]),
+        color=row["color"],
+        favorite=bool(row["favorite"]),
     )
 
 
-def _task(row: sqlite3.Row) -> Task:
+def _task(
+    row: sqlite3.Row,
+    project_links: tuple[TaskProjectLink, ...] = (),
+    checklist_items: tuple[TaskChecklistItem, ...] = (),
+) -> Task:
     lifecycle = row["lifecycle_status"]
     return Task(
         id=row["id"],
@@ -61,6 +74,8 @@ def _task(row: sqlite3.Row) -> Task:
         importance=_boolean(row["importance"]),
         urgency=_boolean(row["urgency"]),
         estimate_minutes=row["planned_minutes"],
+        total_time_minutes=row["total_time_minutes"],
+        active_time_minutes=row["active_time_minutes"],
         schedule_start_date=_date(row["schedule_start_date"]),
         schedule_start_time=_time(row["schedule_start_time"]),
         schedule_end_date=_date(row["schedule_end_date"]),
@@ -72,6 +87,38 @@ def _task(row: sqlite3.Row) -> Task:
         milestone_id=row["milestone_id"],
         created_at=_datetime(row["created_at"]),
         updated_at=_datetime(row["updated_at"]),
+        project_links=project_links,
+        creation_mode=TaskCreationMode(row["creation_mode"]),
+        checklist_items=checklist_items,
+    )
+
+
+def _project_plan(row: sqlite3.Row) -> ProjectPlan:
+    return ProjectPlan(
+        id=row["id"],
+        project_id=row["project_id"],
+        title=row["title"],
+        status=ProjectPlanStatus(row["status"]),
+        created_at=_datetime(row["created_at"]),
+        updated_at=_datetime(row["updated_at"]),
+        completed_at=_datetime(row["completed_at"]),
+        archived_at=_datetime(row["archived_at"]),
+    )
+
+
+def _project_stage(row: sqlite3.Row) -> ProjectStage:
+    return ProjectStage(
+        id=row["id"],
+        project_plan_id=row["project_plan_id"],
+        project_id=row["project_id"],
+        title=row["title"],
+        status=ProjectStageStatus(row["status"]),
+        position=row["position"],
+        start_date=_date(row["start_date"]),
+        end_date=_date(row["end_date"]),
+        created_at=_datetime(row["created_at"]),
+        updated_at=_datetime(row["updated_at"]),
+        archived_at=_datetime(row["archived_at"]),
     )
 
 
